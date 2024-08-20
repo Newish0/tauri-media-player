@@ -56,13 +56,13 @@ fn main() {
             }
 
             // Attach blank window to main window
-            // let main_hwnd = main_window.hwnd().expect("Failed to get main window HWND");
-            // let blank_hwnd = blank_window.hwnd().expect("Failed to get blank window HWND");
+            let main_hwnd = main_window.hwnd().expect("Failed to get main window HWND");
+            let blank_hwnd = blank_window.hwnd().expect("Failed to get blank window HWND");
             
-            // unsafe {
-            //     SetParent(blank_hwnd.0 as HWND, main_hwnd.0 as HWND);
-            //     SetWindowLongPtrA(blank_hwnd.0 as HWND, GWL_STYLE, WS_CHILD as _);
-            // }
+            unsafe {
+                SetParent(blank_hwnd.0 as HWND, main_hwnd.0 as HWND);
+                SetWindowLongPtrA(blank_hwnd.0 as HWND, GWL_STYLE, WS_CHILD as _);
+            }
 
 
             // Initialize MPV
