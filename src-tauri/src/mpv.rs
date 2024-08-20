@@ -32,6 +32,17 @@ impl Mpv {
         })
     }
 
+    fn destroy(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let destroy_fn: Symbol<unsafe extern "C" fn(*mut c_void) -> i32> = unsafe {
+            self.library
+                .get(b"mpv_destroy")
+                .expect("mpv_destroy not found")
+        };
+
+        unsafe { destroy_fn(self.handle.0) };
+        Ok(())
+    }
+
     fn set_option(&self, name: &str, value: &str) -> Result<(), Box<dyn std::error::Error>> {
         let set_option_fn: Symbol<unsafe extern "C" fn(*mut c_void, *const i8, *const i8) -> i32> =
             unsafe { self.library.get(b"mpv_set_option_string")? };
@@ -111,6 +122,11 @@ impl MpvPlayer {
         PLAYER_MAP.lock().unwrap().insert(id, Arc::clone(&player));
 
         Ok(player)
+    }
+
+    pub fn destroy(&self) -> Result<(), Box<dyn std::error::Error>> {
+        PLAYER_MAP.lock().unwrap().remove(&self.id);
+        self.mpv.destroy()
     }
 
     pub fn attach_to_window(&self, wid: usize) -> Result<(), Box<dyn std::error::Error>> {

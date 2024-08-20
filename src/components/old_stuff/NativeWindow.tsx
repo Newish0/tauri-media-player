@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, memo, useCallback } from "react";
+import { mpvPlayer } from "@/services/MpvPlayer";
 
 const createNativeWindow = async () => {
     const hwnd = await invoke("create_native_window");
@@ -41,11 +42,27 @@ const setNativeWindowPosition = async (
 
 type NativeWindowProps = {
     onWindowIdChange?: (windowId: string) => void;
+    beforeDestroy?: () => Promise<void> | void;
 };
 
-const NativeWindow: React.FC<NativeWindowProps> = ({ onWindowIdChange: handleWindowIdChange }) => {
+const NativeWindow: React.FC<NativeWindowProps> = memo(({
+    onWindowIdChange: handleWindowIdChange,
+    beforeDestroy,
+}) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [windowId, setWindowId] = useState<string | null>(null);
+
+    console.log("[NativeWindow] RE_RENDER", windowId);
+
+    const cleanup = useCallback(
+        (windowId: string) => {
+            (async () => {
+                await beforeDestroy?.();
+                destroyNativeWindow(windowId);
+            })();
+        },
+        [beforeDestroy]
+    );
 
     // Create the native window on mount (and destroy on unmount)
     useEffect(() => {
@@ -53,10 +70,11 @@ const NativeWindow: React.FC<NativeWindowProps> = ({ onWindowIdChange: handleWin
 
         let localWindowId: string | null = null;
         createNativeWindow().then((newWindowId) => {
-            localWindowId = newWindowId as string; // Keep a local reference for cleanup
+            
+            if (isUnmounted) destroyNativeWindow(newWindowId as string);
 
-            if (isUnmounted) destroyNativeWindow(localWindowId);
             else {
+                localWindowId = newWindowId as string; // Keep a local reference for cleanup
                 setWindowId(newWindowId as string);
                 handleWindowIdChange?.(newWindowId as string);
             }
@@ -64,7 +82,7 @@ const NativeWindow: React.FC<NativeWindowProps> = ({ onWindowIdChange: handleWin
 
         return () => {
             isUnmounted = true;
-            if (localWindowId) destroyNativeWindow(localWindowId);
+            if (localWindowId) cleanup(localWindowId);
         };
     }, [handleWindowIdChange]);
 
@@ -86,6 +104,8 @@ const NativeWindow: React.FC<NativeWindowProps> = ({ onWindowIdChange: handleWin
         window.addEventListener("resize", updatePosAndSize);
         window.addEventListener("scroll", updatePosAndSize);
 
+        updatePosAndSize(); // Initial update
+
         return () => {
             container.removeEventListener("resize", updatePosAndSize);
             window.removeEventListener("resize", updatePosAndSize);
@@ -98,6 +118,6 @@ const NativeWindow: React.FC<NativeWindowProps> = ({ onWindowIdChange: handleWin
             NativeWindow
         </div>
     );
-};
+});
 
-export default NativeWindow;
+export default (NativeWindow);

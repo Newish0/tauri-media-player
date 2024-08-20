@@ -1,17 +1,26 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { Button } from "./components/ui/button";
-import NativeWindow from "./components/NativeWindow";
-import MpvPlayerWindow from "./components/MpvPlayerWindow";
+import { mpvPlayer } from "./services/MpvPlayer";
+import NativeWindowProxy from "./components/NativeWindowProxy";
 
 function App() {
+
     return (
         <div className="container">
             <h1>Welcome to Tauri MPV Minimal Example!</h1>
 
-            <Button>PLAY MEDIA</Button>
+            <Button onClick={() => mpvPlayer.loadFile("E:/Users/Administrator/Downloads/test.mkv")}>
+                PLAY MEDIA
+            </Button>
 
-            <MpvPlayerWindow />
+            {/* <MpvPlayerWindow /> */}
+
+            <NativeWindowProxy className="h-full min-h-96 border" />
+
+
+            <Button onClick={() => mpvPlayer.play()}>Play </Button>
+            <Button onClick={() => mpvPlayer.pause()}>Pause</Button>
         </div>
     );
 }

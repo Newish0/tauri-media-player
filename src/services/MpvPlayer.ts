@@ -27,6 +27,29 @@ export default class MpvPlayer {
     }
 
     public async destroy() {
-        // TODO
+        await invoke("mpv_destroy", {
+            serializedMpv: this.serializedPlayer,
+        });
+    }
+
+    public async play() {
+        await invoke("mpv_play", {
+            serializedMpv: this.serializedPlayer,
+        });
+    }
+
+    public async pause() {
+        await invoke("mpv_pause", {
+            serializedMpv: this.serializedPlayer,
+        });
+    }
+
+    delete() {
+        this.destroy();
     }
 }
+
+/** A global singleton instance of MpvPlayer */
+export const mpvPlayer = await MpvPlayer.create();
+
+// mpvPlayer.destroy();
