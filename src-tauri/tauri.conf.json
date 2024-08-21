@@ -20,13 +20,7 @@
         "all": true
       }
     },
-    "windows": [
-      {
-        "title": "tauri-media-player",
-        "width": 800,
-        "height": 600
-      }
-    ],
+    "windows": [],
     "security": {
       "csp": null
     },
@@ -41,7 +35,9 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "resources": [ "./lib/libmpv-2.dll" ]
+      "resources": [
+        "./lib/libmpv-2.dll"
+      ]
     }
   }
 }

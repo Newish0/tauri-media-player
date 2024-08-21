@@ -128,7 +128,7 @@ pub fn get_hwnd(window_id: WindowId) -> Option<HWND> {
 /// * `top` - The y-coordinate of the upper-left corner of the area in the parent window.
 /// * `width` - The width of the area in the parent window.
 /// * `height` - The height of the area in the parent window.
-fn attach_child_to_parent_area(
+pub fn attach_child_to_parent_area(
     parent_hwnd: HWND,
     child_hwnd: HWND,
     left: i32,
@@ -139,6 +139,9 @@ fn attach_child_to_parent_area(
     unsafe {
         // Set the parent of the child window
         SetParent(child_hwnd, parent_hwnd);
+
+        // SetWindowLongW(parent_hwnd, GWL_STYLE, (WS_POPUPWINDOW | WS_VISIBLE) as i32);
+        SetWindowLongW(child_hwnd, GWL_STYLE, WS_POPUP as i32 | WS_VISIBLE as i32);
 
         // Force the window to update its style
         SetWindowPos(

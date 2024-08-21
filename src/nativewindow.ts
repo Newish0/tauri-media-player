@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api";
+import { appWindow } from "@tauri-apps/api/window";
 
 const createNativeWindow = async () => {
     const windowId: string = await invoke("create_native_window");
@@ -48,7 +49,9 @@ const initializeAppWithNativeWindow = async (container: HTMLDivElement) => {
         const absX = relX;
         const absY = relY;
 
-        if (windowId) setNativeWindowPosition(windowId, absX, absY, width, height);
+        if (windowId) setNativeWindowPosition(windowId, absX, absY, width, height).then(() => {
+            // appWindow.setFocus(); // TODO: Figure out how to set focus
+        });
     };
 
     container.addEventListener("resize", updatePosAndSize);

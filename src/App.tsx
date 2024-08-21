@@ -10,7 +10,7 @@ function App() {
         <div className="container">
             <h1>Welcome to Tauri MPV Minimal Example!</h1>
 
-            <Button onClick={() => mpvPlayer.loadFile("E:/Users/Administrator/Downloads/test.mkv")}>
+            <Button onClick={() => mpvPlayer.loadFile("E:/Users/Administrator/Downloads/[SubsPlease] Gimai Seikatsu - 07 (1080p) [430962AA].mkv")}>
                 PLAY MEDIA
             </Button>
 
