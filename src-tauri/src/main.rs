@@ -4,6 +4,8 @@
 use once_cell::sync::Lazy;
 use std::borrow::Borrow;
 use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
 use tauri::{Manager, Runtime};
 use winapi::shared::windef::HWND;
 
@@ -26,6 +28,16 @@ fn init_mpv(win_to_attach_to: HWND) {
     player
         .load_file("E:/Users/Administrator/Downloads/test.mkv")
         .expect("Failed to load file");
+
+    thread::sleep(Duration::from_millis(1000));
+
+    player.seek(60.0).expect("Failed to seek");
+
+    thread::sleep(Duration::from_millis(1000));
+
+    let pos = player.get_position().expect("Failed to get position");
+
+    println!("Position: {}", pos);
 }
 
 fn main() {
@@ -49,17 +61,14 @@ fn main() {
                 .eval("document.title = 'Tauri Media Player'")
                 .unwrap();
 
-            let mpv_win = tauri::WindowBuilder::new(
-                app,
-                "mpv",
-                tauri::WindowUrl::App("about:blank".into()),
-            )
-            // .inner_size(width as f64, height as f64)
-            .title("MPV Webview")
-            .parent_window(container_win.hwnd().unwrap())
-            .transparent(true)
-            .build()
-            .unwrap();
+            let mpv_win =
+                tauri::WindowBuilder::new(app, "mpv", tauri::WindowUrl::App("about:blank".into()))
+                    // .inner_size(width as f64, height as f64)
+                    .title("MPV Webview")
+                    .parent_window(container_win.hwnd().unwrap())
+                    .transparent(true)
+                    .build()
+                    .unwrap();
 
             let overlay_win = tauri::WindowBuilder::new(
                 app,

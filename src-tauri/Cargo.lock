@@ -3372,6 +3372,7 @@ dependencies = [
  "serde_json",
  "tauri",
  "tauri-build",
+ "thiserror",
  "uuid 0.8.2",
  "winapi",
  "winit",
