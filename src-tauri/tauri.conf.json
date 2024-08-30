@@ -18,6 +18,13 @@
       },
       "path": {
         "all": true
+      },
+      "window": {
+        "all": false,
+        "setSize": true,
+        "setMinSize": true,
+        "setMaxSize": true,
+        "setPosition": true
       }
     },
     "windows": [],

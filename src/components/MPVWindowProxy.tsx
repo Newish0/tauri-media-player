@@ -1,8 +1,15 @@
 import { useEffect, useRef } from "react";
 
+import { LogicalPosition, LogicalSize, WebviewWindow } from "@tauri-apps/api/window";
+
 let instanceCounter = 0;
 
-const NativeWindowProxy: React.FC<React.ComponentProps<"div">> = (props) => {
+/**
+ * An element that proxies MPV's native window position and size.
+ * > **WARNING: Cannot be used in multiple places at the same time**
+ * @param props 
+ */
+const MPVWindowProxy: React.FC<React.ComponentProps<"div">> = (props) => {
     const containerRef = useRef<HTMLDivElement>(null);
 
     if (instanceCounter > 1) return <div>Cannot create multiple NativeWindowProxy instances</div>;
@@ -16,17 +23,17 @@ const NativeWindowProxy: React.FC<React.ComponentProps<"div">> = (props) => {
 
         const handlePosSizeChange = () => {
             const { x: relX, y: relY, width, height } = container.getBoundingClientRect();
-            const nativeWindowContainer = document.getElementById("native-window-container");
 
-            if (!nativeWindowContainer) return;
+            const mpvWindow = WebviewWindow.getByLabel("mpv");
 
-            Object.assign(nativeWindowContainer.style, {
-                position: "absolute",
-                left: `${relX}px`,
-                top: `${relY}px`,
-                width: `${width}px`,
-                height: `${height}px`,
-            });
+            console.log(mpvWindow);
+
+            if (!mpvWindow) return;
+
+
+            // Sync MPV's native window position and size HTML proxy 
+            mpvWindow.setPosition(new LogicalPosition(relX, relY));
+            mpvWindow.setSize(new LogicalSize(width, height));
         };
 
         container.addEventListener("resize", handlePosSizeChange);
@@ -47,4 +54,4 @@ const NativeWindowProxy: React.FC<React.ComponentProps<"div">> = (props) => {
     return <div {...props} ref={containerRef}></div>;
 };
 
-export default NativeWindowProxy;
+export default MPVWindowProxy;
