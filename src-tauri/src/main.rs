@@ -1,86 +1,14 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use once_cell::sync::Lazy;
-use std::borrow::Borrow;
-use std::sync::{Arc, Mutex};
-use std::thread;
-use std::time::Duration;
+mod mpv;
+mod mpv_tauri_commands;
+mod winapi_abstraction;
+
 use tauri::{Manager, Runtime};
 use winapi::shared::windef::HWND;
-use winapi::um::winuser::*;
 
-mod mpv;
-mod winapi_abstraction;
-use mpv::{MpvError, MpvPlayer};
 use winapi_abstraction::*;
-
-// Global instance of mpv
-static MPV_PLAYER: Lazy<Mutex<Arc<MpvPlayer>>> =
-    Lazy::new(|| Mutex::new(MpvPlayer::new("./lib/mpv/libmpv-2.dll").unwrap()));
-
-fn init_mpv(win_to_attach_to: HWND) {
-    let player = MPV_PLAYER.lock().unwrap();
-
-    player
-        .attach_to_window(win_to_attach_to as usize)
-        .expect("Failed to attach to window");
-    player.initialize().expect("Failed to initialize MPV");
-}
-
-#[tauri::command]
-fn mpv_get_duration() -> Result<f64, MpvError> {
-    let player = MPV_PLAYER.lock().unwrap();
-    player.get_duration()
-}
-
-#[tauri::command]
-fn mpv_get_position() -> Result<f64, MpvError> {
-    let player = MPV_PLAYER.lock().unwrap();
-    player.get_position()
-}
-
-#[tauri::command]
-fn mpv_seek(position: f64) -> Result<(), MpvError> {
-    let player = MPV_PLAYER.lock().unwrap();
-    player.seek(position)
-}
-
-#[tauri::command]
-fn mpv_get_volume() -> Result<f64, MpvError> {
-    let player = MPV_PLAYER.lock().unwrap();
-    player.get_volume()
-}
-
-#[tauri::command]
-fn mpv_set_volume(volume: f64) -> Result<(), MpvError> {
-    let player = MPV_PLAYER.lock().unwrap();
-    player.set_volume(volume)
-}
-
-#[tauri::command]
-fn mpv_is_paused() -> Result<bool, MpvError> {
-    let player = MPV_PLAYER.lock().unwrap();
-    player.is_paused()
-}
-
-#[tauri::command]
-fn mpv_play() -> Result<(), MpvError> {
-    let player = MPV_PLAYER.lock().unwrap();
-    player.play()
-}
-
-#[tauri::command]
-fn mpv_pause() -> Result<(), MpvError> {
-    let player = MPV_PLAYER.lock().unwrap();
-    player.pause()
-}
-
-#[tauri::command]
-fn mpv_load_file(path: &str) -> Result<(), MpvError> {
-    let player = MPV_PLAYER.lock().unwrap();
-    player.load_file(path)
-}
 
 fn main() {
     tauri::Builder::default()
@@ -172,22 +100,22 @@ fn main() {
                 }
             });
 
-            init_mpv(mpv_win.hwnd().unwrap().0 as HWND);
+            mpv_tauri_commands::init_mpv(mpv_win.hwnd().unwrap().0 as HWND);
 
             container_win.show().unwrap(); // Init complete, show window
 
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            mpv_get_duration,
-            mpv_get_position,
-            mpv_seek,
-            mpv_get_volume,
-            mpv_set_volume,
-            mpv_is_paused,
-            mpv_play,
-            mpv_pause,
-            mpv_load_file
+            mpv_tauri_commands::mpv_get_duration,
+            mpv_tauri_commands::mpv_get_position,
+            mpv_tauri_commands::mpv_seek,
+            mpv_tauri_commands::mpv_get_volume,
+            mpv_tauri_commands::mpv_set_volume,
+            mpv_tauri_commands::mpv_is_paused,
+            mpv_tauri_commands::mpv_play,
+            mpv_tauri_commands::mpv_pause,
+            mpv_tauri_commands::mpv_load_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
