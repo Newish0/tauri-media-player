@@ -47,7 +47,7 @@
         "icons/icon.ico"
       ],
       "resources": [
-        "./lib/libmpv-2.dll"
+        "./lib/mpv/libmpv-2.dll"
       ]
     }
   }
