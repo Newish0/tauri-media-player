@@ -25,6 +25,10 @@
         "setMinSize": true,
         "setMaxSize": true,
         "setPosition": true
+      },
+      "dialog": {
+        "all": false,
+        "open": true
       }
     },
     "windows": [],

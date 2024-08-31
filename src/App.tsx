@@ -7,11 +7,15 @@ import MpvPlayer from "./services/MpvPlayer";
 import { useMpvPlayer } from "./hooks/use-mpv-player";
 import PlayerControl from "./components/ui/player-control";
 import { Card } from "./components/ui/card";
+import PlayerContextMenu from "./components/ui/player-context-menu";
 
 function App() {
     return (
         <div className="h-screen w-screen relative">
-            <MpvWindowProxy className="h-full w-full" />
+            
+            <PlayerContextMenu>
+                <MpvWindowProxy className="h-full w-full" />
+            </PlayerContextMenu>
 
             {/* Center wrapper for player controls */}
             <div className="absolute bottom-2 w-full flex justify-center">

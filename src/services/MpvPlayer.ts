@@ -25,11 +25,11 @@ export default class MpvPlayer {
         });
     }
 
-    // public static async loadFile(filePath: string) {
-    //     return await invoke("mpv_load_file", {
-    //         path: filePath,
-    //     });
-    // }
+    public static async loadFile(filePath: string) {
+        return await invoke("mpv_load_file", {
+            path: filePath,
+        });
+    }
 
     public static isPaused(): Promise<boolean> {
         return invoke("mpv_is_paused");

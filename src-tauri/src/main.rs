@@ -89,6 +89,12 @@ fn mpv_pause() -> Result<(), MpvError> {
     player.pause()
 }
 
+#[tauri::command]
+fn mpv_load_file(path: &str) -> Result<(), MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.load_file(path)
+}
+
 fn main() {
     tauri::Builder::default()
         .setup(|app| {
@@ -191,7 +197,8 @@ fn main() {
             mpv_set_volume,
             mpv_is_paused,
             mpv_play,
-            mpv_pause
+            mpv_pause,
+            mpv_load_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
