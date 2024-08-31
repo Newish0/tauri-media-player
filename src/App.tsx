@@ -5,9 +5,13 @@ import { Card } from "./components/ui/card";
 import PlayerContextMenu from "./components/ui/player-context-menu";
 import { useMouseActivity } from "./hooks/use-mouse-activity";
 import { cn } from "./lib/utils";
+import { useRef } from "react";
 
 function App() {
-    const isMouseActive = useMouseActivity(window, { inactiveDelay: 1000 });
+    const playerControlContainerRef = useRef<HTMLDivElement>(null);
+    const isMouseActive = useMouseActivity([window], {
+        inactiveDelay: 1000,
+    });
 
     return (
         <div className="h-screen w-screen relative">
@@ -19,6 +23,7 @@ function App() {
             <div className="absolute bottom-2 w-full flex justify-center">
                 {/* Player control container  */}
                 <Card
+                    ref={playerControlContainerRef}
                     className={cn(
                         "w-full md:w-1/2 max-w-6xl p-2 transition-opacity duration-300",
                         isMouseActive ? "bg-card/90 opacity-90" : "opacity-0"

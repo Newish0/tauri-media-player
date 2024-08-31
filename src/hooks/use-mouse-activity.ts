@@ -5,7 +5,7 @@ export type MouseActivityOptions = {
 };
 
 export function useMouseActivity(
-    root: Window | Element | null,
+    root: Window | Element | null | (Window | Element | null)[],
     options: MouseActivityOptions = {}
 ) {
     const { inactiveDelay = 100 } = options;
@@ -27,13 +27,27 @@ export function useMouseActivity(
         };
 
         if (!root) return;
-        root.addEventListener("mouseover", handleMouseOver);
-        root.addEventListener("mouseleave", handleMouseLeave);
-        root.addEventListener("mousemove", handleMouseMove);
+
+        const addListeners = (target: Window | Element) => {
+            target.addEventListener("mouseover", handleMouseOver);
+            target.addEventListener("mouseleave", handleMouseLeave);
+            target.addEventListener("mousemove", handleMouseMove);
+        };
+
+        const removeListeners = (target: Window | Element) => {
+            target.removeEventListener("mouseover", handleMouseOver);
+            target.removeEventListener("mouseleave", handleMouseLeave);
+            target.removeEventListener("mousemove", handleMouseMove);
+        };
+
+        if (Array.isArray(root)) {
+            root.forEach((eln) => eln && addListeners(eln));
+            return () => root.forEach((eln) => eln && removeListeners(eln));
+        }
+
+        addListeners(root);
         return () => {
-            root.removeEventListener("mouseover", handleMouseOver);
-            root.removeEventListener("mouseleave", handleMouseLeave);
-            root.removeEventListener("mousemove", handleMouseMove);
+            removeListeners(root);
         };
     }, [root, inactiveDelay]);
 
