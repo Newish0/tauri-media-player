@@ -6,6 +6,7 @@ import PlayerContextMenu from "./components/ui/player-context-menu";
 import { useMouseActivity } from "./hooks/use-mouse-activity";
 import { cn } from "./lib/utils";
 import { useRef } from "react";
+import { useMpvPlayer } from "./hooks/use-mpv-player";
 
 function App() {
     const playerControlContainerRef = useRef<HTMLDivElement>(null);
@@ -13,10 +14,21 @@ function App() {
         inactiveDelay: 1000,
     });
 
+    const {
+        info: { path },
+    } = useMpvPlayer();
+
     return (
         <div className="h-screen w-screen relative">
             <PlayerContextMenu>
-                <MpvWindowProxy className="h-full w-full" />
+                {path ? (
+                    <MpvWindowProxy className="h-full w-full" />
+                ) : (
+                    <div className="absolute h-full w-full inset-0 flex flex-col justify-center items-center">
+                        <div className="leading-6 font-medium">No file opened</div>
+                        <i>Right click to play file</i>
+                    </div>
+                )}
             </PlayerContextMenu>
 
             {/* Center wrapper for player controls */}
