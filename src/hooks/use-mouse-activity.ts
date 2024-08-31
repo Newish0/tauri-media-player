@@ -4,7 +4,10 @@ export type MouseActivityOptions = {
     inactiveDelay?: number;
 };
 
-export function useMouseActivity(options: MouseActivityOptions = {}) {
+export function useMouseActivity(
+    root: Window | Element | null,
+    options: MouseActivityOptions = {}
+) {
     const { inactiveDelay = 100 } = options;
     const [isActive, setIsActive] = useState(false);
 
@@ -23,16 +26,16 @@ export function useMouseActivity(options: MouseActivityOptions = {}) {
             setInactiveWithDelay();
         };
 
-        if (!window) return;
-        window.addEventListener("mouseover", handleMouseOver);
-        window.addEventListener("mouseleave", handleMouseLeave);
-        window.addEventListener("mousemove", handleMouseMove);
+        if (!root) return;
+        root.addEventListener("mouseover", handleMouseOver);
+        root.addEventListener("mouseleave", handleMouseLeave);
+        root.addEventListener("mousemove", handleMouseMove);
         return () => {
-            window.removeEventListener("mouseover", handleMouseOver);
-            window.removeEventListener("mouseleave", handleMouseLeave);
-            window.removeEventListener("mousemove", handleMouseMove);
+            root.removeEventListener("mouseover", handleMouseOver);
+            root.removeEventListener("mouseleave", handleMouseLeave);
+            root.removeEventListener("mousemove", handleMouseMove);
         };
-    }, [inactiveDelay]);
+    }, [root, inactiveDelay]);
 
     return isActive;
 }

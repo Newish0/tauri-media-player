@@ -26,19 +26,6 @@ fn init_mpv(win_to_attach_to: HWND) {
         .attach_to_window(win_to_attach_to as usize)
         .expect("Failed to attach to window");
     player.initialize().expect("Failed to initialize MPV");
-    player
-        .load_file("E:/Users/Administrator/Downloads/test.mkv")
-        .expect("Failed to load file");
-
-    // thread::sleep(Duration::from_millis(1000));
-
-    // player.seek(60.0).expect("Failed to seek");
-
-    // thread::sleep(Duration::from_millis(1000));
-
-    // let pos = player.get_position().expect("Failed to get position");
-
-    // println!("Position: {}", pos);
 }
 
 #[tauri::command]
