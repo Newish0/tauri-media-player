@@ -132,24 +132,24 @@ fn main() {
                 mpv_win.hwnd().unwrap().0 as HWND,
                 0,
                 0,
-                0, // don't care
-                0, // don't care
+                0, // don't care; handled by JS MpvWindowProxy
+                0, // don't care; handled by JS MpvWindowProxy
             );
             // attach_child_to_parent_area(
             //     container_win.hwnd().unwrap().0 as HWND,
             //     bg_win.hwnd().unwrap().0 as HWND,
             //     0,
             //     0,
-            //     0, // don't care
-            //     0, // don't care
+            //     0,
+            //     0,
             // );
             attach_child_to_parent_area(
                 container_win.hwnd().unwrap().0 as HWND,
                 app_win.hwnd().unwrap().0 as HWND,
                 0,
                 0,
-                0, // don't care
-                0, // don't care
+                container_win.inner_size().unwrap().width as i32,
+                container_win.inner_size().unwrap().height as i32,
             );
 
             let container_win_ref = container_win.clone();
