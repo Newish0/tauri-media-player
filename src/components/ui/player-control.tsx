@@ -54,7 +54,10 @@ const PlayerControl: React.FC = () => {
             <Slider
                 value={[playerInfo.position]}
                 min={0}
-                max={playerInfo.duration}
+                max={
+                    // Use very small number as zero so slider nob position correctly
+                    Math.max(playerInfo.duration, 1e-24)
+                }
                 step={0.1}
                 onValueChange={handleSeek}
             ></Slider>
