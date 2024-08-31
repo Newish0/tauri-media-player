@@ -131,12 +131,12 @@ impl Mpv {
 
     fn get_property_string(&self, name: &str) -> Result<String, MpvError> {
         let get_property_string_fn: Symbol<
-            unsafe extern "C" fn(*mut c_void, *const c_char, c_int) -> *mut c_char,
+            unsafe extern "C" fn(*mut c_void, *const c_char) -> *mut c_char,
         > = unsafe { self.library.get(b"mpv_get_property_string")? };
 
         let name_cstring = CString::new(name)?;
 
-        let result = unsafe { get_property_string_fn(self.handle.0, name_cstring.as_ptr(), 0) };
+        let result = unsafe { get_property_string_fn(self.handle.0, name_cstring.as_ptr()) };
 
         if result.is_null() {
             return Err(MpvError::GetPropertyError(name.to_string()));
@@ -145,12 +145,18 @@ impl Mpv {
         let c_str = unsafe { CStr::from_ptr(result) };
         let string = c_str.to_str().unwrap_or("").to_string();
 
-        // Free the string allocated by mpv
-        let free_fn: Symbol<unsafe extern "C" fn(*mut c_void, *mut c_char)> =
-            unsafe { self.library.get(b"mpv_free")? };
-        unsafe { free_fn(self.handle.0, result) };
+        self.free(result as *mut c_void)?; // free string 
 
         Ok(string)
+    }
+
+    /// Free data allocated by MPV. This should be used to free the result of
+    /// `get_property_string` and other functions that return dynamic memory data by MPV.
+    fn free(&self, ptr: *mut c_void) -> Result<(), MpvError> {
+        let free_fn: Symbol<unsafe extern "C" fn(*mut c_void)> =
+            unsafe { self.library.get(b"mpv_free")? };
+        unsafe { free_fn(ptr) };
+        Ok(())
     }
 
     fn get_property_double(&self, name: &str) -> Result<f64, MpvError> {
