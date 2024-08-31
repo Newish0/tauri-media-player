@@ -107,13 +107,14 @@ fn main() {
                     .build()
                     .unwrap();
 
-            // TODO: add proper webview controlled background (to get thumbnail/album art acrylic backdrop)
-            // let bg_win =
-            //     tauri::WindowBuilder::new(app, "bg", tauri::WindowUrl::App("about:blank".into()))
-            //         .title("MPV Webview")
-            //         .parent_window(container_win.hwnd().unwrap())
-            //         .build()
-            //         .unwrap();
+            // Webview for controlled background (to get thumbnail/album art acrylic backdrop)
+            let bg_win =
+                tauri::WindowBuilder::new(app, "bg", tauri::WindowUrl::App("about:blank".into()))
+                    .title("MPV Webview")
+                    .parent_window(container_win.hwnd().unwrap())
+                    .build()
+                    .unwrap();
+            // TODO: bg_win: add basic JS to listen for messages for setting the background image
 
             let app_win = tauri::WindowBuilder::new(
                 app,
@@ -126,7 +127,16 @@ fn main() {
             .build()
             .unwrap();
 
-            // Set all other windows to be child of the container window
+            // Set all other windows to be child of the container window; ORDER MATTERS!
+            attach_child_to_parent_area(
+                container_win.hwnd().unwrap().0 as HWND,
+                bg_win.hwnd().unwrap().0 as HWND,
+                0,
+                0,
+                container_win.inner_size().unwrap().width as i32,
+                container_win.inner_size().unwrap().height as i32,
+            );
+
             attach_child_to_parent_area(
                 container_win.hwnd().unwrap().0 as HWND,
                 mpv_win.hwnd().unwrap().0 as HWND,
@@ -135,14 +145,7 @@ fn main() {
                 0, // don't care; handled by JS MpvWindowProxy
                 0, // don't care; handled by JS MpvWindowProxy
             );
-            // attach_child_to_parent_area(
-            //     container_win.hwnd().unwrap().0 as HWND,
-            //     bg_win.hwnd().unwrap().0 as HWND,
-            //     0,
-            //     0,
-            //     0,
-            //     0,
-            // );
+
             attach_child_to_parent_area(
                 container_win.hwnd().unwrap().0 as HWND,
                 app_win.hwnd().unwrap().0 as HWND,
@@ -153,20 +156,19 @@ fn main() {
             );
 
             let container_win_ref = container_win.clone();
-            let mpv_win_ref: tauri::Window = mpv_win.clone();
 
             // Set up a handler for the container window's resize event
             container_win.on_window_event(move |event| {
                 if let tauri::WindowEvent::Resized(_) = event {
-                    // bg_win
-                    //     .set_size(container_win_ref.inner_size().unwrap())
-                    //     .unwrap();
+                    bg_win
+                        .set_size(container_win_ref.inner_size().unwrap())
+                        .unwrap();
 
-                    resize_child_to_parent(&container_win_ref, &app_win);
+                    /* NOTE: Skip resize of mpv_win since mpv window size is handled by MpvWindowProxy.tsx */
 
-                    // app_win
-                    //     .set_size(container_win_ref.inner_size().unwrap())
-                    //     .unwrap();
+                    app_win
+                        .set_size(container_win_ref.inner_size().unwrap())
+                        .unwrap();
                 }
             });
 
