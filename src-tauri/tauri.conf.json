@@ -24,7 +24,8 @@
         "setSize": true,
         "setMinSize": true,
         "setMaxSize": true,
-        "setPosition": true
+        "setPosition": true,
+        "setFullscreen": true
       },
       "dialog": {
         "all": false,

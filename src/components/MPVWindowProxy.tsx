@@ -7,7 +7,7 @@ let instanceCounter = 0;
 /**
  * An element that proxies MPV's native window position and size.
  * > **WARNING: Cannot be used in multiple places at the same time**
- * @param props 
+ * @param props
  */
 const MPVWindowProxy: React.FC<Omit<React.ComponentProps<"div">, "ref">> = (props) => {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -26,12 +26,9 @@ const MPVWindowProxy: React.FC<Omit<React.ComponentProps<"div">, "ref">> = (prop
 
             const mpvWindow = WebviewWindow.getByLabel("mpv");
 
-            console.log(mpvWindow);
-
             if (!mpvWindow) return;
 
-
-            // Sync MPV's native window position and size HTML proxy 
+            // Sync MPV's native window position and size HTML proxy
             mpvWindow.setPosition(new LogicalPosition(relX, relY));
             mpvWindow.setSize(new LogicalSize(width, height));
         };
