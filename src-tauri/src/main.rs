@@ -115,7 +115,8 @@ fn main() {
             mpv_tauri_commands::mpv_is_paused,
             mpv_tauri_commands::mpv_play,
             mpv_tauri_commands::mpv_pause,
-            mpv_tauri_commands::mpv_load_file
+            mpv_tauri_commands::mpv_load_file,
+            mpv_tauri_commands::mpv_get_path
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

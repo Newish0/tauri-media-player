@@ -31,6 +31,10 @@ export default class MpvPlayer {
         });
     }
 
+    public static async getPath(): Promise<string> {
+        return await invoke("mpv_get_path");
+    }
+
     public static isPaused(): Promise<boolean> {
         return invoke("mpv_is_paused");
     }

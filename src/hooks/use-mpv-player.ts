@@ -9,38 +9,27 @@ export function useMpvPlayer({}: MpvPlayerHookOptions = {}) {
         position: 0,
         volume: 0,
         isPaused: true,
+        path: "", // empty path ==> no file loaded
     });
 
     useEffect(() => {
-        let intId = setInterval(() => {
-            MpvPlayer.getDuration().then((duration) => {
-                setInfo((prev) => ({
-                    ...prev,
-                    duration,
-                }));
-            });
+        let intId = setInterval(async () => {
+            // Get state and use default value if there is an error
+            const duration = await MpvPlayer.getDuration().catch(() => 0);
+            const position = await MpvPlayer.getPosition().catch(() => 0);
+            const volume = await MpvPlayer.getVolume().catch(() => 0);
+            const isPaused = await MpvPlayer.isPaused().catch(() => true);
+            const path = await MpvPlayer.getPath().catch(() => "");
 
-            MpvPlayer.getPosition().then((position) => {
-                setInfo((prev) => ({
-                    ...prev,
-                    position,
-                }));
-            });
-
-            MpvPlayer.getVolume().then((volume) => {
-                setInfo((prev) => ({
-                    ...prev,
-                    volume,
-                }));
-            });
-
-            MpvPlayer.isPaused().then((isPaused) => {
-                setInfo((prev) => ({
-                    ...prev,
-                    isPaused,
-                }));
-            });
-        }, 1000);
+            setInfo((prev) => ({
+                ...prev,
+                duration,
+                position,
+                volume,
+                isPaused,
+                path,
+            }));
+        }, 1);
 
         return () => clearInterval(intId);
     }, []);

@@ -1,11 +1,9 @@
-
 use crate::mpv;
 
+use mpv::{MpvError, MpvPlayer};
 use once_cell::sync::Lazy;
 use std::sync::{Arc, Mutex};
-use mpv::{MpvError, MpvPlayer};
 use winapi::shared::windef::HWND;
-
 
 // Global instance of mpv
 static MPV_PLAYER: Lazy<Mutex<Arc<MpvPlayer>>> =
@@ -72,4 +70,10 @@ pub fn mpv_pause() -> Result<(), MpvError> {
 pub fn mpv_load_file(path: &str) -> Result<(), MpvError> {
     let player = MPV_PLAYER.lock().unwrap();
     player.load_file(path)
+}
+
+#[tauri::command]
+pub fn mpv_get_path() -> Result<String, MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.get_path()
 }

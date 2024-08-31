@@ -52,6 +52,7 @@ const PlayerControl: React.FC = () => {
                 <span>{formatSeconds(playerInfo.duration)}</span>
             </div>
             <Slider
+                disabled={!playerInfo.path}
                 value={[playerInfo.position]}
                 min={0}
                 max={
@@ -64,7 +65,12 @@ const PlayerControl: React.FC = () => {
 
             <div className="flex justify-between items-center">
                 <div>
-                    <Button size={"icon"} variant={"ghost"} onClick={handlePlayPauseToggle}>
+                    <Button
+                        size={"icon"}
+                        variant={"ghost"}
+                        onClick={handlePlayPauseToggle}
+                        disabled={!playerInfo.path}
+                    >
                         {playerInfo.isPaused ? <PlayIcon></PlayIcon> : <PauseIcon></PauseIcon>}
                     </Button>
                 </div>
