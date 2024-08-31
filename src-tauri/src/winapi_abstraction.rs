@@ -39,17 +39,11 @@ pub fn attach_child_to_parent_area(
     }
 }
 
-pub fn resize_child_to_parent(parent: &tauri::Window, child: &tauri::Window) {
-    let size = parent.inner_size().unwrap();
-    let width = size.width as i32;
-    let height = size.height as i32;
-
-    let child_hwnd = child.hwnd().expect("Failed to get child window HWND");
-
+fn _resize_child_to_parent(child: HWND, insert_after: HWND, width: i32, height: i32) {
     unsafe {
         SetWindowPos(
-            child_hwnd.0 as _,
-            std::ptr::null_mut(),
+            child,
+            insert_after,
             0,
             0,
             width,
@@ -57,4 +51,38 @@ pub fn resize_child_to_parent(parent: &tauri::Window, child: &tauri::Window) {
             SWP_NOZORDER,
         );
     }
+}
+
+pub fn resize_child_to_parent(parent: &tauri::Window, child: &tauri::Window) {
+    let size = parent.inner_size().unwrap();
+    let width = size.width as i32;
+    let height = size.height as i32;
+
+    let child_hwnd = child.hwnd().expect("Failed to get child window HWND");
+
+    _resize_child_to_parent(
+        child_hwnd.0 as HWND,
+        HWND_BOTTOM,
+        width,
+        height,
+    );
+}
+
+pub fn resize_child_to_parent_after_window(
+    parent: &tauri::Window,
+    child: &tauri::Window,
+    insert_after: &tauri::Window,
+) {
+    let size = parent.inner_size().unwrap();
+    let width = size.width as i32;
+    let height = size.height as i32;
+
+    let child_hwnd = child.hwnd().expect("Failed to get child window HWND");
+
+    _resize_child_to_parent(
+        child_hwnd.0 as HWND,
+        insert_after.hwnd().unwrap().0 as HWND,
+        width,
+        height,
+    );
 }

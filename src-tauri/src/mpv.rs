@@ -1,4 +1,5 @@
 use libloading::{Library, Symbol};
+use serde::{Deserialize, Serialize};
 use std::ffi::{c_char, CStr, CString};
 use std::os::raw::{c_double, c_int, c_void};
 use std::sync::Arc;
@@ -23,6 +24,16 @@ pub enum MpvError {
     StringConversionError(#[from] std::ffi::NulError),
     #[error("Failed to get property: {0}")]
     GetPropertyError(String),
+}
+
+// Custom serializer for MpvError
+impl serde::Serialize for MpvError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        serializer.serialize_str(self.to_string().as_ref())
+    }
 }
 
 /**
@@ -165,6 +176,30 @@ impl Mpv {
             Err(MpvError::GetPropertyError(name.to_string()))
         }
     }
+
+    fn get_property_bool(&self, name: &str) -> Result<bool, MpvError> {
+        let get_property_bool_fn: Symbol<
+            unsafe extern "C" fn(*mut c_void, *const c_char, c_int, *mut c_int) -> c_int,
+        > = unsafe { self.library.get(b"mpv_get_property")? };
+
+        let name_cstring = CString::new(name)?;
+
+        let mut value: c_int = 0;
+        let result = unsafe {
+            get_property_bool_fn(
+                self.handle.0,
+                name_cstring.as_ptr(),
+                MpvFormat::MpvFormatFlag as c_int,
+                &mut value as *mut c_int,
+            )
+        };
+
+        if result < 0 {
+            return Err(MpvError::GetPropertyError(name.to_string()));
+        }
+
+        Ok(value != 0)
+    }
 }
 
 impl Drop for Mpv {
@@ -246,8 +281,7 @@ impl MpvPlayer {
     }
 
     pub fn is_paused(&self) -> Result<bool, MpvError> {
-        let paused = self.mpv.get_property_string("pause")?;
-        Ok(paused == "yes")
+        self.mpv.get_property_bool("pause")
     }
 
     pub fn get_chapter(&self) -> Result<i64, MpvError> {

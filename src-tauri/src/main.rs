@@ -8,10 +8,11 @@ use std::thread;
 use std::time::Duration;
 use tauri::{Manager, Runtime};
 use winapi::shared::windef::HWND;
+use winapi::um::winuser::*;
 
 mod mpv;
 mod winapi_abstraction;
-use mpv::MpvPlayer;
+use mpv::{MpvError, MpvPlayer};
 use winapi_abstraction::*;
 
 // Global instance of mpv
@@ -29,29 +30,73 @@ fn init_mpv(win_to_attach_to: HWND) {
         .load_file("E:/Users/Administrator/Downloads/test.mkv")
         .expect("Failed to load file");
 
-    thread::sleep(Duration::from_millis(1000));
+    // thread::sleep(Duration::from_millis(1000));
 
-    player.seek(60.0).expect("Failed to seek");
+    // player.seek(60.0).expect("Failed to seek");
 
-    thread::sleep(Duration::from_millis(1000));
+    // thread::sleep(Duration::from_millis(1000));
 
-    let pos = player.get_position().expect("Failed to get position");
+    // let pos = player.get_position().expect("Failed to get position");
 
-    println!("Position: {}", pos);
+    // println!("Position: {}", pos);
+}
+
+#[tauri::command]
+fn mpv_get_duration() -> Result<f64, MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.get_duration()
+}
+
+#[tauri::command]
+fn mpv_get_position() -> Result<f64, MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.get_position()
+}
+
+#[tauri::command]
+fn mpv_seek(position: f64) -> Result<(), MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.seek(position)
+}
+
+#[tauri::command]
+fn mpv_get_volume() -> Result<f64, MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.get_volume()
+}
+
+#[tauri::command]
+fn mpv_set_volume(volume: f64) -> Result<(), MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.set_volume(volume)
+}
+
+#[tauri::command]
+fn mpv_is_paused() -> Result<bool, MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.is_paused()
+}
+
+#[tauri::command]
+fn mpv_play() -> Result<(), MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.play()
+}
+
+#[tauri::command]
+fn mpv_pause() -> Result<(), MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.pause()
 }
 
 fn main() {
     tauri::Builder::default()
         .setup(|app| {
-            let width = 800;
-            let height = 600;
-
             let container_win = tauri::WindowBuilder::new(
                 app,
                 "container",
                 tauri::WindowUrl::App("about:blank".into()),
             )
-            // .inner_size(width as f64, height as f64)
             .title("Tauri Media Player")
             .visible(false) // hide until all other init are complete
             .build()
@@ -63,45 +108,55 @@ fn main() {
 
             let mpv_win =
                 tauri::WindowBuilder::new(app, "mpv", tauri::WindowUrl::App("about:blank".into()))
-                    // .inner_size(width as f64, height as f64)
                     .title("MPV Webview")
                     .parent_window(container_win.hwnd().unwrap())
                     .transparent(true)
                     .build()
                     .unwrap();
 
-            let overlay_win = tauri::WindowBuilder::new(
+            // TODO: add proper webview controlled background (to get thumbnail/album art acrylic backdrop)
+            // let bg_win =
+            //     tauri::WindowBuilder::new(app, "bg", tauri::WindowUrl::App("about:blank".into()))
+            //         .title("MPV Webview")
+            //         .parent_window(container_win.hwnd().unwrap())
+            //         .build()
+            //         .unwrap();
+
+            let app_win = tauri::WindowBuilder::new(
                 app,
                 "overlay",
                 tauri::WindowUrl::App("index.html".into()),
             )
-            // .inner_size(width as f64, height as f64)
             .title("Overlay Webview")
             .parent_window(container_win.hwnd().unwrap())
             .transparent(true)
             .build()
             .unwrap();
 
-            // // Initial positioning and sizing
-            // resize_child_to_parent(&container_window, &bg_window); // Must call BG first to maintain z-order
-            // resize_child_to_parent(&container_window, &main_window);
-
+            // Set all other windows to be child of the container window
             attach_child_to_parent_area(
                 container_win.hwnd().unwrap().0 as HWND,
                 mpv_win.hwnd().unwrap().0 as HWND,
                 0,
                 0,
-                width,
-                height,
+                0, // don't care
+                0, // don't care
             );
-
+            // attach_child_to_parent_area(
+            //     container_win.hwnd().unwrap().0 as HWND,
+            //     bg_win.hwnd().unwrap().0 as HWND,
+            //     0,
+            //     0,
+            //     0, // don't care
+            //     0, // don't care
+            // );
             attach_child_to_parent_area(
                 container_win.hwnd().unwrap().0 as HWND,
-                overlay_win.hwnd().unwrap().0 as HWND,
+                app_win.hwnd().unwrap().0 as HWND,
                 0,
                 0,
-                width,
-                height,
+                0, // don't care
+                0, // don't care
             );
 
             let container_win_ref = container_win.clone();
@@ -110,8 +165,15 @@ fn main() {
             // Set up a handler for the container window's resize event
             container_win.on_window_event(move |event| {
                 if let tauri::WindowEvent::Resized(_) = event {
-                    resize_child_to_parent(&container_win_ref, &mpv_win_ref); // Must call BG first to maintain z-order
-                    resize_child_to_parent(&container_win_ref, &overlay_win);
+                    // bg_win
+                    //     .set_size(container_win_ref.inner_size().unwrap())
+                    //     .unwrap();
+
+                    resize_child_to_parent(&container_win_ref, &app_win);
+
+                    // app_win
+                    //     .set_size(container_win_ref.inner_size().unwrap())
+                    //     .unwrap();
                 }
             });
 
@@ -121,7 +183,16 @@ fn main() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![])
+        .invoke_handler(tauri::generate_handler![
+            mpv_get_duration,
+            mpv_get_position,
+            mpv_seek,
+            mpv_get_volume,
+            mpv_set_volume,
+            mpv_is_paused,
+            mpv_play,
+            mpv_pause
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

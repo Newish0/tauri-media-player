@@ -1,26 +1,26 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { Button } from "./components/ui/button";
 // import { mpvPlayer } from "./services/MpvPlayer";
-import MPVWindowProxy from "./components/MPVWindowProxy";
+import MpvWindowProxy from "./components/MpvWindowProxy";
+import MpvPlayer from "./services/MpvPlayer";
+import { useMpvPlayer } from "./hooks/use-mpv-player";
+import PlayerControl from "./components/ui/player-control";
+import { Card } from "./components/ui/card";
 
 function App() {
-
     return (
-        <div className="h-full w-full min-h-screen">
-            <h1>Welcome to Tauri MPV Minimal Example!</h1>
+        <div className="h-screen w-screen relative">
+            <MpvWindowProxy className="h-full w-full" />
 
-            {/* <Button onClick={() => mpvPlayer.loadFile("E:/Users/Administrator/Downloads/[SubsPlease] Gimai Seikatsu - 07 (1080p) [430962AA].mkv")}>
-                PLAY MEDIA
-            </Button> */}
+            {/* Center wrapper for player controls */}
+            <div className="absolute bottom-2 w-full flex justify-center">
+                {/* Player control container  */}
 
-            {/* <MpvPlayerWindow /> */}
-
-            <MPVWindowProxy className="h-full min-h-96 border" />
-
-{/* 
-            <Button onClick={() => mpvPlayer.play()}>Play </Button>
-            <Button onClick={() => mpvPlayer.pause()}>Pause</Button> */}
+                <Card className="w-full md:w-1/2 max-w-6xl p-4 ">
+                    <PlayerControl />
+                </Card>
+            </div>
         </div>
     );
 }
