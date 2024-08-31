@@ -4,6 +4,7 @@
 mod mpv;
 mod mpv_tauri_commands;
 mod winapi_abstraction;
+mod utils;
 
 use tauri::{Manager, Runtime};
 use winapi::shared::windef::HWND;

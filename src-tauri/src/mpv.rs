@@ -297,4 +297,8 @@ impl MpvPlayer {
     pub fn get_chapter_count(&self) -> Result<i64, MpvError> {
         self.mpv.get_property_double("chapters").map(|ch| ch as i64)
     }
+
+    pub fn disable_osd(&self) -> Result<(), MpvError> {
+        self.mpv.command_string("set osd-level 0")
+    }
 }

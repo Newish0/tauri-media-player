@@ -1,4 +1,5 @@
 use crate::mpv;
+use crate::utils::is_dev_mode;
 
 use mpv::{MpvError, MpvPlayer};
 use once_cell::sync::Lazy;
@@ -16,6 +17,10 @@ pub fn init_mpv(win_to_attach_to: HWND) {
         .attach_to_window(win_to_attach_to as usize)
         .expect("Failed to attach to window");
     player.initialize().expect("Failed to initialize MPV");
+
+    if !is_dev_mode() {
+        player.disable_osd().expect("Failed to disable OSD");
+    }
 }
 
 #[tauri::command]
