@@ -9,7 +9,7 @@ let instanceCounter = 0;
  * > **WARNING: Cannot be used in multiple places at the same time**
  * @param props 
  */
-const MPVWindowProxy: React.FC<React.ComponentProps<"div">> = (props) => {
+const MPVWindowProxy: React.FC<Omit<React.ComponentProps<"div">, "ref">> = (props) => {
     const containerRef = useRef<HTMLDivElement>(null);
 
     if (instanceCounter > 1) return <div>Cannot create multiple NativeWindowProxy instances</div>;

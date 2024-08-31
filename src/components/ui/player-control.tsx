@@ -1,6 +1,5 @@
 import { useMpvPlayer } from "@/hooks/use-mpv-player";
 import { Slider } from "./slider";
-import { info } from "console";
 import { formatSeconds } from "@/lib/utils";
 import { Button } from "./button";
 import {
