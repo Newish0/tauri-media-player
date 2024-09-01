@@ -259,9 +259,7 @@ impl Mpv {
         event_id: MpvEventId,
         callback: EventCallback,
     ) -> Result<(), MpvError> {
-        println!("Registering callback for event: {:?}", event_id);
         let event_id = event_id as c_int;
-        println!("AKA event: {:?}", event_id);
         let mut callbacks = self.event_callbacks.lock().unwrap();
         callbacks
             .entry(event_id)
