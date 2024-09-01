@@ -1,13 +1,13 @@
 import MpvWindowProxy from "@/components/MPVWindowProxy";
-import PlayerControl from "@/components/ui/player-control";
+import PlayerControl from "@/components/PlayerControl";
 import { Card } from "@/components/ui/card";
-import PlayerContextMenu from "@/components/ui/player-context-menu";
+import PlayerContextMenu from "@/components/PlayerContextMenu";
 import { useMouseActivity } from "@/hooks/use-mouse-activity";
 import { cn } from "@/lib/utils";
 import { useRef } from "react";
 import { useMpvPlayer } from "@/hooks/use-mpv-player";
 
-function App() {
+function FocusedPlayer() {
     const playerControlContainerRef = useRef<HTMLDivElement>(null);
     const isMouseActive = useMouseActivity([window], {
         inactiveDelay: 1000,
@@ -47,4 +47,4 @@ function App() {
     );
 }
 
-export default App;
+export default FocusedPlayer;

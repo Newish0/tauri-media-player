@@ -1,8 +1,8 @@
 import { useMpvPlayer } from "@/hooks/use-mpv-player";
 import { useWindowFullscreen } from "@/hooks/use-tauri-window";
-import { Slider } from "./slider";
+import { Slider } from "@/components/ui/slider";
 import { formatSeconds } from "@/lib/utils";
-import { Button } from "./button";
+import { Button } from "@/components/ui/button";
 import {
     EnterFullScreenIcon,
     ExitFullScreenIcon,
