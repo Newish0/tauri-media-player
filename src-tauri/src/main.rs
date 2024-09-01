@@ -3,8 +3,8 @@
 
 mod mpv;
 mod mpv_tauri_commands;
-mod winapi_abstraction;
 mod utils;
+mod winapi_abstraction;
 
 use tauri::{Manager, Runtime};
 use winapi::shared::windef::HWND;
@@ -86,6 +86,7 @@ fn main() {
 
             let container_win_ref = container_win.clone();
 
+
             // Set up a handler for the container window's resize event
             container_win.on_window_event(move |event| {
                 if let tauri::WindowEvent::Resized(_) = event {
@@ -117,7 +118,8 @@ fn main() {
             mpv_tauri_commands::mpv_play,
             mpv_tauri_commands::mpv_pause,
             mpv_tauri_commands::mpv_load_file,
-            mpv_tauri_commands::mpv_get_path
+            mpv_tauri_commands::mpv_get_path,
+            mpv_tauri_commands::mpv_register_events_callback
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

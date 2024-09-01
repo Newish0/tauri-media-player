@@ -65,6 +65,7 @@ enum MpvFormat {
 
 /// These constants are from [client.h](https://github.com/mpv-player/mpv/blob/master/libmpv/client.h)
 /// and are used to identify the type of event that occurred.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[repr(C)]
 pub enum MpvEventId {
     None = 0,
@@ -255,9 +256,12 @@ impl Mpv {
 
     fn register_event_callback(
         &self,
-        event_id: c_int,
+        event_id: MpvEventId,
         callback: EventCallback,
     ) -> Result<(), MpvError> {
+        println!("Registering callback for event: {:?}", event_id);
+        let event_id = event_id as c_int;
+        println!("AKA event: {:?}", event_id);
         let mut callbacks = self.event_callbacks.lock().unwrap();
         callbacks
             .entry(event_id)
@@ -272,13 +276,14 @@ impl Mpv {
 
         loop {
             let event = unsafe { wait_event_fn(self.handle.0, Mpv::EVENT_TIMEOUT) };
+            
             if event.is_null() {
                 break;
             }
 
             let event = unsafe { &*event };
             if event.event_id == MpvEventId::None as c_int {
-                break;
+                continue;
             }
 
             let callbacks = self.event_callbacks.lock().unwrap();
@@ -391,7 +396,7 @@ impl MpvPlayer {
 
     pub fn register_event_callback(
         &self,
-        event_id: c_int,
+        event_id: MpvEventId,
         callback: impl Fn(&MpvEvent) + Send + 'static,
     ) -> Result<(), MpvError> {
         self.mpv

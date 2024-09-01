@@ -1,10 +1,17 @@
-use crate::mpv;
+use crate::mpv::{self, MpvEvent};
 use crate::utils::is_dev_mode;
 
-use mpv::{MpvError, MpvPlayer};
+use mpv::{MpvError, MpvEventId, MpvPlayer};
 use once_cell::sync::Lazy;
+use std::borrow::Borrow;
 use std::sync::{Arc, Mutex};
+use tauri::Manager;
 use winapi::shared::windef::HWND;
+
+#[derive(Clone, serde::Serialize)]
+struct MpvEventPayload {
+    event_id: u32,
+}
 
 // Global instance of mpv
 static MPV_PLAYER: Lazy<Mutex<Arc<MpvPlayer>>> =
@@ -18,9 +25,63 @@ pub fn init_mpv(win_to_attach_to: HWND) {
         .expect("Failed to attach to window");
     player.initialize().expect("Failed to initialize MPV");
 
+    // player
+    //     .register_event_callback(MpvEventId::FileLoaded, |event| {
+    //         println!("Received event: FileLoaded");
+    //     })
+    //     .expect("Failed to register event callback");
+
     if !is_dev_mode() {
         player.disable_osd().expect("Failed to disable OSD");
     }
+}
+
+#[tauri::command]
+pub fn mpv_register_events_callback(window: tauri::Window) {
+    let player = MPV_PLAYER.lock().unwrap();
+
+    let events = [
+        MpvEventId::None,
+        MpvEventId::Shutdown,
+        MpvEventId::LogMessage,
+        MpvEventId::GetPropertyReply,
+        MpvEventId::SetPropertyReply,
+        MpvEventId::CommandReply,
+        MpvEventId::StartFile,
+        MpvEventId::EndFile,
+        MpvEventId::FileLoaded,
+        MpvEventId::ClientMessage,
+        MpvEventId::VideoReconfig,
+        MpvEventId::AudioReconfig,
+        MpvEventId::Seek,
+        MpvEventId::PlaybackRestart,
+        MpvEventId::PropertyChange,
+        MpvEventId::QueueOverflow,
+        MpvEventId::Hook,
+    ]; // register all the events we want
+
+    // HACK: this is kinda a mess and should be refactored but i don't have time right now
+    for event in events.iter() {
+        let event_window = window.clone();
+        let event_id = event.clone(); // Clone the event_id here
+        match player.register_event_callback(event_id.clone(), move |_| {
+            emit_event(event_window.clone(), event_id.clone()); // Clone again here if necessary
+        }) {
+            Ok(_) => (),
+            Err(e) => eprintln!("Failed to register event callback: {}", e), // TODO: Handle error properly
+        };
+    }
+}
+
+fn emit_event(window: tauri::Window, event_id: MpvEventId) {
+    window
+        .emit(
+            "mpv-event",
+            MpvEventPayload {
+                event_id: event_id as u32,
+            },
+        )
+        .unwrap_or_else(|e| eprintln!("Failed to emit event: {}", e));
 }
 
 #[tauri::command]
