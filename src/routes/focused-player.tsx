@@ -1,12 +1,11 @@
-// import { mpvPlayer } from "./services/MpvPlayer";
-import MpvWindowProxy from "./components/MpvWindowProxy";
-import PlayerControl from "./components/ui/player-control";
-import { Card } from "./components/ui/card";
-import PlayerContextMenu from "./components/ui/player-context-menu";
-import { useMouseActivity } from "./hooks/use-mouse-activity";
-import { cn } from "./lib/utils";
+import MpvWindowProxy from "@/components/MPVWindowProxy";
+import PlayerControl from "@/components/ui/player-control";
+import { Card } from "@/components/ui/card";
+import PlayerContextMenu from "@/components/ui/player-context-menu";
+import { useMouseActivity } from "@/hooks/use-mouse-activity";
+import { cn } from "@/lib/utils";
 import { useRef } from "react";
-import { useMpvPlayer } from "./hooks/use-mpv-player";
+import { useMpvPlayer } from "@/hooks/use-mpv-player";
 
 function App() {
     const playerControlContainerRef = useRef<HTMLDivElement>(null);
