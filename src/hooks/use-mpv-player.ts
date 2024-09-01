@@ -29,7 +29,7 @@ export function useMpvPlayer({}: MpvPlayerHookOptions = {}) {
                 isPaused,
                 path,
             }));
-        }, 1);
+        }, 1000);
 
         return () => clearInterval(intId);
     }, []);

@@ -1,8 +1,11 @@
 use libloading::{Library, Symbol};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::ffi::{c_char, CStr, CString};
 use std::os::raw::{c_double, c_int, c_void};
 use std::sync::Arc;
+use std::sync::Mutex;
+use std::thread;
 use thiserror::Error;
 
 // Thread-safe wrapper for the raw pointer
@@ -14,16 +17,24 @@ unsafe impl Sync for MpvHandle {}
 pub enum MpvError {
     #[error("Library error: {0}")]
     LibraryError(#[from] libloading::Error),
+
     #[error("Failed to set option: {name} = {value}")]
     SetOptionError { name: String, value: String },
+
     #[error("Failed to initialize MPV")]
     InitializationError,
+
     #[error("Failed to execute command: {0}")]
     CommandError(String),
+
     #[error("String conversion error: {0}")]
     StringConversionError(#[from] std::ffi::NulError),
+
     #[error("Failed to get property: {0}")]
     GetPropertyError(String),
+
+    #[error("Failed to process events")]
+    EventProcessingError, // TODO: actual use the error
 }
 
 // Custom serializer for MpvError
@@ -36,30 +47,64 @@ impl serde::Serialize for MpvError {
     }
 }
 
-/**
- * Mpv formats enum copied straight from mpv's client.h file.
- * See original client.h file for details and usage.
- */
+/// Mpv formats enum copied straight from mpv's client.h file.
+/// See original client.h file for details and usage.
 #[repr(C)]
 enum MpvFormat {
-    MpvFormatNone = 0,
-    MpvFormatString = 1,
-    MpvFormatOsdString = 2,
-    MpvFormatFlag = 3,
-    MpvFormatInt64 = 4,
-    MpvFormatDouble = 5,
-    MpvFormatNode = 6,
-    MpvFormatNodeArray = 7,
-    MpvFormatNodeMap = 8,
-    MpvFormatByteArray = 9,
+    None = 0,
+    String = 1,
+    OsdString = 2,
+    Flag = 3,
+    Int64 = 4,
+    Double = 5,
+    Node = 6,
+    NodeArray = 7,
+    NodeMap = 8,
+    ByteArray = 9,
 }
+
+/// These constants are from [client.h](https://github.com/mpv-player/mpv/blob/master/libmpv/client.h)
+/// and are used to identify the type of event that occurred.
+#[repr(C)]
+pub enum MpvEventId {
+    None = 0,
+    Shutdown = 1,
+    LogMessage = 2,
+    GetPropertyReply = 3,
+    SetPropertyReply = 4,
+    CommandReply = 5,
+    StartFile = 6,
+    EndFile = 7,
+    FileLoaded = 8,
+    ClientMessage = 16,
+    VideoReconfig = 17,
+    AudioReconfig = 18,
+    Seek = 20,
+    PlaybackRestart = 21,
+    PropertyChange = 22,
+    QueueOverflow = 24,
+    Hook = 25,
+}
+
+#[repr(C)]
+pub struct MpvEvent {
+    event_id: c_int,
+    error: c_int,
+    reply_userdata: u64,
+    data: *mut c_void,
+}
+
+pub type EventCallback = Box<dyn Fn(&MpvEvent) + Send + 'static>;
 
 struct Mpv {
     handle: MpvHandle,
     library: Arc<Library>,
+    event_callbacks: Mutex<HashMap<c_int, Vec<EventCallback>>>,
 }
 
 impl Mpv {
+    const EVENT_TIMEOUT: f64 = 1.0; // timeout for `mpv_wait_event()`
+
     fn new(lib_path: &str) -> Result<Self, MpvError> {
         let library = Arc::new(unsafe { Library::new(lib_path)? });
         let create_fn: Symbol<unsafe extern "C" fn() -> *mut c_void> =
@@ -69,6 +114,7 @@ impl Mpv {
         Ok(Self {
             handle: MpvHandle(handle),
             library,
+            event_callbacks: Mutex::new(HashMap::new()),
         })
     }
 
@@ -145,7 +191,7 @@ impl Mpv {
         let c_str = unsafe { CStr::from_ptr(result) };
         let string = c_str.to_str().unwrap_or("").to_string();
 
-        self.free(result as *mut c_void)?; // free string 
+        self.free(result as *mut c_void)?; // free string
 
         Ok(string)
     }
@@ -171,7 +217,7 @@ impl Mpv {
             get_property_double_fn(
                 self.handle.0,
                 name_cstring.as_ptr(),
-                MpvFormat::MpvFormatDouble as c_int,
+                MpvFormat::Double as c_int,
                 &mut value as *mut c_double,
             )
         };
@@ -195,7 +241,7 @@ impl Mpv {
             get_property_bool_fn(
                 self.handle.0,
                 name_cstring.as_ptr(),
-                MpvFormat::MpvFormatFlag as c_int,
+                MpvFormat::Flag as c_int,
                 &mut value as *mut c_int,
             )
         };
@@ -205,6 +251,45 @@ impl Mpv {
         }
 
         Ok(value != 0)
+    }
+
+    fn register_event_callback(
+        &self,
+        event_id: c_int,
+        callback: EventCallback,
+    ) -> Result<(), MpvError> {
+        let mut callbacks = self.event_callbacks.lock().unwrap();
+        callbacks
+            .entry(event_id)
+            .or_insert_with(Vec::new)
+            .push(callback);
+        Ok(())
+    }
+
+    fn process_events(&self) -> Result<(), MpvError> {
+        let wait_event_fn: Symbol<unsafe extern "C" fn(*mut c_void, c_double) -> *mut MpvEvent> =
+            unsafe { self.library.get(b"mpv_wait_event")? };
+
+        loop {
+            let event = unsafe { wait_event_fn(self.handle.0, Mpv::EVENT_TIMEOUT) };
+            if event.is_null() {
+                break;
+            }
+
+            let event = unsafe { &*event };
+            if event.event_id == MpvEventId::None as c_int {
+                break;
+            }
+
+            let callbacks = self.event_callbacks.lock().unwrap();
+            if let Some(event_callbacks) = callbacks.get(&event.event_id) {
+                for callback in event_callbacks {
+                    callback(event);
+                }
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -227,6 +312,8 @@ impl MpvPlayer {
     pub fn new(lib_path: &str) -> Result<Arc<Self>, MpvError> {
         let mpv = Arc::new(Mpv::new(lib_path)?);
         let player = Arc::new(Self { mpv });
+
+        player.start_event_processing();
 
         Ok(player)
     }
@@ -300,5 +387,23 @@ impl MpvPlayer {
 
     pub fn disable_osd(&self) -> Result<(), MpvError> {
         self.mpv.command_string("set osd-level 0")
+    }
+
+    pub fn register_event_callback(
+        &self,
+        event_id: c_int,
+        callback: impl Fn(&MpvEvent) + Send + 'static,
+    ) -> Result<(), MpvError> {
+        self.mpv
+            .register_event_callback(event_id, Box::new(callback))
+    }
+
+    /// Starts an event processing thread. This is necessary to receive events
+    /// from libmpv without blocking the current thread.
+    fn start_event_processing(&self) {
+        let mpv = self.mpv.clone();
+        thread::spawn(move || {
+            let _ = mpv.process_events();
+        });
     }
 }
