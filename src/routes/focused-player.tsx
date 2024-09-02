@@ -1,13 +1,14 @@
 import MpvWindowProxy from "@/components/MPVWindowProxy";
-import PlayerControl from "@/components/PlayerControl";
-import { Card } from "@/components/ui/card";
 import PlayerContextMenu from "@/components/PlayerContextMenu";
-import { useMouseActivity } from "@/hooks/use-mouse-activity";
-import { cn } from "@/lib/utils";
-import { useRef } from "react";
-import { useMpvPlayer } from "@/hooks/use-mpv-player";
-import { Cross1Icon, ExitIcon } from "@radix-ui/react-icons";
+import PlayerControl from "@/components/PlayerControl";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { useMouseActivity } from "@/hooks/use-mouse-activity";
+import { useMpvPlayer } from "@/hooks/use-mpv-player";
+import { useWindowFullscreen } from "@/hooks/use-tauri-window";
+import { cn } from "@/lib/utils";
+import { Cross1Icon } from "@radix-ui/react-icons";
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 function FocusedPlayer() {
@@ -20,9 +21,12 @@ function FocusedPlayer() {
         info: { path, filename },
     } = useMpvPlayer();
 
+    const [isFullscreen, setIsFullscreen] = useWindowFullscreen("container");
+
     const navigate = useNavigate();
 
     const handleExitFocusedPlayer = () => {
+        if (isFullscreen) setIsFullscreen(false); // Ensure to exit fullscreen first
         navigate(-1);
     };
 
