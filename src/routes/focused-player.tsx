@@ -6,6 +6,9 @@ import { useMouseActivity } from "@/hooks/use-mouse-activity";
 import { cn } from "@/lib/utils";
 import { useRef } from "react";
 import { useMpvPlayer } from "@/hooks/use-mpv-player";
+import { Cross1Icon, ExitIcon } from "@radix-ui/react-icons";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 function FocusedPlayer() {
     const playerControlContainerRef = useRef<HTMLDivElement>(null);
@@ -14,8 +17,14 @@ function FocusedPlayer() {
     });
 
     const {
-        info: { path },
+        info: { path, filename },
     } = useMpvPlayer();
+
+    const navigate = useNavigate();
+
+    const handleExitFocusedPlayer = () => {
+        navigate(-1);
+    };
 
     return (
         <div className="h-screen w-screen relative">
@@ -29,6 +38,22 @@ function FocusedPlayer() {
                     </div>
                 )}
             </PlayerContextMenu>
+
+            {/* Top container */}
+            <div
+                className={cn(
+                    "absolute top-0 w-full p-2 transition-opacity duration-300",
+                    isMouseActive ? "opacity-90" : "opacity-0"
+                )}
+            >
+                <div className="text-primary-foreground flex items-center">
+                    <Button variant={"link"} onClick={handleExitFocusedPlayer}>
+                        <Cross1Icon className="text-primary-foreground" />
+                    </Button>
+
+                    <div>{filename}</div>
+                </div>
+            </div>
 
             {/* Center wrapper for player controls */}
             <div className="absolute bottom-2 w-full flex justify-center">

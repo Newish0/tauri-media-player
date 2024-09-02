@@ -141,6 +141,10 @@ export default class MpvPlayer {
         return await invoke("mpv_get_path");
     }
 
+    public static async getFilename(): Promise<string> {
+        return await invoke("mpv_get_filename");
+    }
+
     public static isPaused(): Promise<boolean> {
         return invoke("mpv_is_paused");
     }

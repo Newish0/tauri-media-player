@@ -11,6 +11,7 @@ type PlayerInfo = {
     volume: number;
     isPaused: boolean;
     path: string;
+    filename: string;
     tracks: Track[];
 };
 
@@ -21,6 +22,7 @@ export function useMpvPlayer({}: MpvPlayerHookOptions = {}) {
         volume: 0,
         isPaused: true,
         path: "", // empty path ==> no file loaded
+        filename: "",
         tracks: [],
     });
 
@@ -32,6 +34,7 @@ export function useMpvPlayer({}: MpvPlayerHookOptions = {}) {
             const volume = await MpvPlayer.getVolume().catch(() => 0);
             const isPaused = await MpvPlayer.isPaused().catch(() => true);
             const path = await MpvPlayer.getPath().catch(() => "");
+            const filename = await MpvPlayer.getFilename().catch(() => "");
             const tracks = await MpvPlayer.getTracks().catch(() => []);
 
             setInfo((prev) => ({
@@ -41,12 +44,15 @@ export function useMpvPlayer({}: MpvPlayerHookOptions = {}) {
                 volume,
                 isPaused,
                 path,
+                filename,
                 tracks,
             }));
         };
 
         let intId = setInterval(fetchInfo, 1000);
         MpvPlayer.on(MpvEventId.FileLoaded, fetchInfo);
+
+        fetchInfo(); // initial fetch
 
         // Cleanup
         return () => {

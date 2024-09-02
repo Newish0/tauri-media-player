@@ -28,8 +28,6 @@ const PlayerContextMenu: React.FC<React.PropsWithChildren> = ({ children }) => {
         useWindowFullscreen("container")
     );
 
-    console.log(info);
-
     const handlePlayFile = async () => {
         const path = await open({
             multiple: false,
@@ -47,6 +45,14 @@ const PlayerContextMenu: React.FC<React.PropsWithChildren> = ({ children }) => {
         setIsFullScreen(isFullScreen);
     };
 
+    const handlePlayPauseToggle = () => {
+        if (info.isPaused) {
+            MpvPlayer.play();
+        } else {
+            MpvPlayer.pause();
+        }
+    };
+
     return (
         <ContextMenu>
             <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
@@ -57,7 +63,7 @@ const PlayerContextMenu: React.FC<React.PropsWithChildren> = ({ children }) => {
 
                 <ContextMenuSeparator />
 
-                <ContextMenuItem inset>
+                <ContextMenuItem inset onClick={handlePlayPauseToggle}>
                     Play/Pause
                     <ContextMenuShortcut>Space</ContextMenuShortcut>
                 </ContextMenuItem>

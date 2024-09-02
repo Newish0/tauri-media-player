@@ -156,6 +156,12 @@ pub fn mpv_get_path() -> Result<String, MpvError> {
 }
 
 #[tauri::command]
+pub fn mpv_get_filename() -> Result<String, MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.get_filename()
+}
+
+#[tauri::command]
 pub fn mpv_get_tracks() -> Result<Vec<Track>, MpvError> {
     let player = MPV_PLAYER.lock().unwrap();
     player.get_tracks()
