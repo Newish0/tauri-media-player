@@ -1,11 +1,9 @@
-use crate::mpv::{self, MpvEvent};
+use crate::mpv::{self};
 use crate::utils::is_dev_mode;
 
-use mpv::{MpvError, MpvEventId, MpvPlayer};
+use mpv::*;
 use once_cell::sync::Lazy;
-use std::borrow::Borrow;
 use std::sync::{Arc, Mutex};
-use tauri::Manager;
 use winapi::shared::windef::HWND;
 
 #[derive(Clone, serde::Serialize)]
@@ -24,6 +22,19 @@ pub fn init_mpv(win_to_attach_to: HWND) {
         .attach_to_window(win_to_attach_to as usize)
         .expect("Failed to attach to window");
     player.initialize().expect("Failed to initialize MPV");
+
+    // player.load_file("E:/Users/Administrator/Downloads/test.mkv").expect("Failed to load file");
+
+    // thread::sleep(std::time::Duration::from_millis(1000));
+
+    // match player.get_current_tracks() {
+    //     Ok(tracks) => {
+    //         println!("Tracks: {:?}", tracks);
+    //     }
+    //     Err(e) => {
+    //         println!("Failed to get tracks: {:?}", e);
+    //     }
+    // }
 
     // player
     //     .register_event_callback(MpvEventId::FileLoaded, |event| {
@@ -142,4 +153,26 @@ pub fn mpv_load_file(path: &str) -> Result<(), MpvError> {
 pub fn mpv_get_path() -> Result<String, MpvError> {
     let player = MPV_PLAYER.lock().unwrap();
     player.get_path()
+}
+
+#[tauri::command]
+pub fn mpv_get_tracks() -> Result<Vec<Track>, MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.get_tracks()
+}
+
+#[tauri::command]
+pub fn mpv_get_current_tracks() -> Result<CurrentTracks, MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.get_current_tracks()
+}
+
+#[tauri::command]
+pub fn mpv_set_tracks(
+    video: Option<i64>,
+    audio: Option<i64>,
+    subtitle: Option<i64>,
+) -> Result<(), MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.set_tracks(video, audio, subtitle)
 }

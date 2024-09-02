@@ -27,6 +27,31 @@ type MpvEvent = Event<{
 
 type MpvEventCallback = (event: MpvEvent) => void;
 
+export type Track = {
+    id: number;
+    type_: string;
+    src_id: number;
+    title?: string;
+    lang?: string;
+    codec: string;
+    external: boolean;
+    selected: boolean;
+    decoder?: string;
+    codec_desc?: string;
+    demux_w?: number;
+    demux_h?: number;
+    demux_fps?: number;
+    audio_channels?: number;
+    demux_channel_count?: number;
+    demux_samplerate?: number;
+};
+
+export type CurrentTracks = {
+    video?: Track;
+    audio?: Track;
+    subtitle?: Track;
+};
+
 export default class MpvPlayer {
     private static eventListeners = new Map<MpvEventId, Set<MpvEventCallback>>();
 
@@ -105,5 +130,25 @@ export default class MpvPlayer {
 
     public static async pause() {
         await invoke("mpv_pause");
+    }
+
+    public static async get_tracks(): Promise<Track[]> {
+        return await invoke("mpv_get_tracks");
+    }
+
+    public static async get_current_tracks(): Promise<CurrentTracks> {
+        return await invoke("mpv_get_current_tracks");
+    }
+
+    public static async set_tracks(
+        options: {
+            audio?: string;
+            subtitle?: string;
+            video?: string;
+        } = {}
+    ) {
+        return await invoke("mpv_set_tracks", {
+            ...options,
+        });
     }
 }

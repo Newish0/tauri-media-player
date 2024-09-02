@@ -1,5 +1,6 @@
 use libloading::{Library, Symbol};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashMap;
 use std::ffi::{c_char, CStr, CString};
 use std::os::raw::{c_double, c_int, c_void};
@@ -32,6 +33,9 @@ pub enum MpvError {
 
     #[error("Failed to get property: {0}")]
     GetPropertyError(String),
+
+    #[error("Failed to set property: {0}")]
+    SetPropertyError(String),
 
     #[error("Failed to process events")]
     EventProcessingError, // TODO: actual use the error
@@ -197,15 +201,6 @@ impl Mpv {
         Ok(string)
     }
 
-    /// Free data allocated by MPV. This should be used to free the result of
-    /// `get_property_string` and other functions that return dynamic memory data by MPV.
-    fn free(&self, ptr: *mut c_void) -> Result<(), MpvError> {
-        let free_fn: Symbol<unsafe extern "C" fn(*mut c_void)> =
-            unsafe { self.library.get(b"mpv_free")? };
-        unsafe { free_fn(ptr) };
-        Ok(())
-    }
-
     fn get_property_double(&self, name: &str) -> Result<f64, MpvError> {
         let get_property_double_fn: Symbol<
             unsafe extern "C" fn(*mut c_void, *const c_char, c_int, *mut c_double) -> c_int,
@@ -220,6 +215,30 @@ impl Mpv {
                 name_cstring.as_ptr(),
                 MpvFormat::Double as c_int,
                 &mut value as *mut c_double,
+            )
+        };
+
+        if result == 0 {
+            Ok(value)
+        } else {
+            Err(MpvError::GetPropertyError(name.to_string()))
+        }
+    }
+
+    fn get_property_int(&self, name: &str) -> Result<i64, MpvError> {
+        let get_property_int_fn: Symbol<
+            unsafe extern "C" fn(*mut c_void, *const c_char, c_int, *mut i64) -> c_int,
+        > = unsafe { self.library.get(b"mpv_get_property")? };
+
+        let name_cstring = CString::new(name)?;
+        let mut value: i64 = 0;
+
+        let result = unsafe {
+            get_property_int_fn(
+                self.handle.0,
+                name_cstring.as_ptr(),
+                MpvFormat::Int64 as c_int,
+                &mut value as *mut i64,
             )
         };
 
@@ -254,6 +273,38 @@ impl Mpv {
         Ok(value != 0)
     }
 
+    fn set_property_int(&self, name: &str, value: i64) -> Result<(), MpvError> {
+        let set_property_int_fn: Symbol<
+            unsafe extern "C" fn(*mut c_void, *const c_char, c_int, *const i64) -> c_int,
+        > = unsafe { self.library.get(b"mpv_set_property")? };
+
+        let name_cstring = CString::new(name)?;
+
+        let result = unsafe {
+            set_property_int_fn(
+                self.handle.0,
+                name_cstring.as_ptr(),
+                MpvFormat::Int64 as c_int,
+                &value as *const i64,
+            )
+        };
+
+        if result == 0 {
+            Ok(())
+        } else {
+            Err(MpvError::SetPropertyError(name.to_string()))
+        }
+    }
+
+    /// Free data allocated by MPV. This should be used to free the result of
+    /// `get_property_string` and other functions that return dynamic memory data by MPV.
+    fn free(&self, ptr: *mut c_void) -> Result<(), MpvError> {
+        let free_fn: Symbol<unsafe extern "C" fn(*mut c_void)> =
+            unsafe { self.library.get(b"mpv_free")? };
+        unsafe { free_fn(ptr) };
+        Ok(())
+    }
+
     fn register_event_callback(
         &self,
         event_id: MpvEventId,
@@ -274,7 +325,7 @@ impl Mpv {
 
         loop {
             let event = unsafe { wait_event_fn(self.handle.0, Mpv::EVENT_TIMEOUT) };
-            
+
             if event.is_null() {
                 break;
             }
@@ -307,6 +358,48 @@ impl Drop for Mpv {
     }
 }
 
+
+/// Track struct according to documentation at 
+/// https://mpv.io/manual/stable/#command-interface-track-list
+/// > **Note:** Only some fields are used (see all fields in documentation)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Track {
+    pub id: i64,
+    #[serde(rename = "type")]
+    pub type_: String, // need to use `type_` instead of `type` since `type` is a reserved keyword
+    #[serde(rename = "src-id")]
+    pub src_id: i64,
+    pub title: Option<String>,
+    pub lang: Option<String>,
+    pub codec: String,
+    #[serde(default)]
+    pub external: bool,
+    pub selected: bool,
+    // Add other fields as needed
+    pub decoder: Option<String>,
+    #[serde(rename = "codec-desc")]
+    pub codec_desc: Option<String>,
+    #[serde(rename = "demux-w")]
+    pub demux_w: Option<i64>,
+    #[serde(rename = "demux-h")]
+    pub demux_h: Option<i64>,
+    #[serde(rename = "demux-fps")]
+    pub demux_fps: Option<f64>,
+    #[serde(rename = "audio-channels")]
+    pub audio_channels: Option<i64>,
+    #[serde(rename = "demux-channel-count")]
+    pub demux_channel_count: Option<i64>,
+    #[serde(rename = "demux-samplerate")]
+    pub demux_samplerate: Option<i64>,
+}
+
+/// The current tracks of the media being played.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CurrentTracks {
+    pub video: Option<Track>,
+    pub audio: Option<Track>,
+    pub subtitle: Option<Track>,
+}
 pub struct MpvPlayer {
     mpv: Arc<Mpv>,
 }
@@ -390,6 +483,94 @@ impl MpvPlayer {
 
     pub fn disable_osd(&self) -> Result<(), MpvError> {
         self.mpv.command_string("set osd-level 0")
+    }
+
+    pub fn get_tracks(&self) -> Result<Vec<Track>, MpvError> {
+        let tracks_json = self.mpv.get_property_string("track-list")?;
+        let tracks: Vec<Track> = serde_json::from_str(&tracks_json).map_err(|e| {
+            MpvError::GetPropertyError(format!(
+                "Failed to parse track-list: {}. JSON: {}",
+                e, tracks_json
+            ))
+        })?;
+        Ok(tracks)
+    }
+
+    pub fn get_audio_tracks(&self) -> Result<Vec<Track>, MpvError> {
+        self.get_tracks()
+            .map(|tracks| tracks.into_iter().filter(|t| t.type_ == "audio").collect())
+    }
+
+    pub fn get_video_tracks(&self) -> Result<Vec<Track>, MpvError> {
+        self.get_tracks()
+            .map(|tracks| tracks.into_iter().filter(|t| t.type_ == "video").collect())
+    }
+
+    pub fn get_subtitle_tracks(&self) -> Result<Vec<Track>, MpvError> {
+        self.get_tracks()
+            .map(|tracks| tracks.into_iter().filter(|t| t.type_ == "sub").collect())
+    }
+
+    pub fn get_current_video_track(&self) -> Result<Option<Track>, MpvError> {
+        let current_vid = self.mpv.get_property_int("vid")?;
+        Ok(self
+            .get_tracks()?
+            .into_iter()
+            .find(|t| t.type_ == "video" && t.id == current_vid))
+    }
+
+    pub fn get_current_audio_track(&self) -> Result<Option<Track>, MpvError> {
+        let current_aid = self.mpv.get_property_int("aid")?;
+        Ok(self
+            .get_tracks()?
+            .into_iter()
+            .find(|t| t.type_ == "audio" && t.id == current_aid))
+    }
+
+    pub fn get_current_subtitle_track(&self) -> Result<Option<Track>, MpvError> {
+        let current_sid = self.mpv.get_property_int("sid")?;
+        Ok(self
+            .get_tracks()?
+            .into_iter()
+            .find(|t| t.type_ == "sub" && t.id == current_sid))
+    }
+
+    pub fn get_current_tracks(&self) -> Result<CurrentTracks, MpvError> {
+        Ok(CurrentTracks {
+            video: self.get_current_video_track()?,
+            audio: self.get_current_audio_track()?,
+            subtitle: self.get_current_subtitle_track()?,
+        })
+    }
+
+    pub fn set_video_track(&self, track_id: i64) -> Result<(), MpvError> {
+        self.mpv.set_property_int("vid", track_id)
+    }
+
+    pub fn set_audio_track(&self, track_id: i64) -> Result<(), MpvError> {
+        self.mpv.set_property_int("aid", track_id)
+    }
+
+    pub fn set_subtitle_track(&self, track_id: i64) -> Result<(), MpvError> {
+        self.mpv.set_property_int("sid", track_id)
+    }
+
+    pub fn set_tracks(
+        &self,
+        video: Option<i64>,
+        audio: Option<i64>,
+        subtitle: Option<i64>,
+    ) -> Result<(), MpvError> {
+        if let Some(vid) = video {
+            self.set_video_track(vid)?;
+        }
+        if let Some(aid) = audio {
+            self.set_audio_track(aid)?;
+        }
+        if let Some(sid) = subtitle {
+            self.set_subtitle_track(sid)?;
+        }
+        Ok(())
     }
 
     pub fn register_event_callback(

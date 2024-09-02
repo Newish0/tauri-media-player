@@ -119,7 +119,10 @@ fn main() {
             mpv_tauri_commands::mpv_pause,
             mpv_tauri_commands::mpv_load_file,
             mpv_tauri_commands::mpv_get_path,
-            mpv_tauri_commands::mpv_register_events_callback
+            mpv_tauri_commands::mpv_register_events_callback,
+            mpv_tauri_commands::mpv_get_tracks,
+            mpv_tauri_commands::mpv_get_current_tracks,
+            mpv_tauri_commands::mpv_set_tracks
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
