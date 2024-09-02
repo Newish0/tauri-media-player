@@ -32,9 +32,11 @@
         "open": true
       },
       "fs": {
-        "all": true,
+        "all": false,
+        "readFile": true,
+        "readDir": true,
         "scope": [
-          "$RESOURCE/*"
+          "**"
         ]
       }
     },
