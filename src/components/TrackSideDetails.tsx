@@ -1,9 +1,12 @@
 import MPVWindowProxy from "./MPVWindowProxy";
+import PlayerContextMenu from "./PlayerContextMenu";
 
 const TrackSideDetails: React.FC = () => {
     return (
         <div>
-            <MPVWindowProxy  className="aspect-square w-full"/>
+            <PlayerContextMenu>
+                <MPVWindowProxy className="aspect-square w-full" />
+            </PlayerContextMenu>
         </div>
     );
 };

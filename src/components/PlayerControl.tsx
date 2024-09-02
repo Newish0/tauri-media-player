@@ -1,4 +1,4 @@
-import { useMpvPlayer } from "@/hooks/use-mpv-player";
+import { useFullscreenAsFocusedPlayer, useMpvPlayer } from "@/hooks/use-mpv-player";
 import { useWindowFullscreen } from "@/hooks/use-tauri-window";
 import { Slider } from "@/components/ui/slider";
 import { formatSeconds } from "@/lib/utils";
@@ -17,7 +17,9 @@ import { useState } from "react";
 
 const PlayerControl: React.FC = () => {
     const { info: playerInfo, seek, play, pause, setVolume } = useMpvPlayer();
-    const [isFullScreen, setIsFullScreen] = useWindowFullscreen("container");
+    const [isFullScreen, setIsFullScreen] = useFullscreenAsFocusedPlayer(() =>
+        useWindowFullscreen("container")
+    );
 
     // store the volume before muting so we can restore it when toggling mute
     const [volumeBeforeMute, setVolumeBeforeMute] = useState(playerInfo.volume);

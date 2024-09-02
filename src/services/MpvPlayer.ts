@@ -1,3 +1,4 @@
+import { objectKeysToCamelCase } from "@/lib/utils";
 import { invoke } from "@tauri-apps/api";
 import { listen, type Event } from "@tauri-apps/api/event";
 
@@ -27,24 +28,44 @@ type MpvEvent = Event<{
 
 type MpvEventCallback = (event: MpvEvent) => void;
 
-export type Track = {
+export interface Track {
     id: number;
-    type_: string;
-    src_id: number;
+    type: string; // `type` is not a reserved word in TypeScript, so no need to rename
+    srcId: number;
     title?: string;
     lang?: string;
-    codec: string;
-    external: boolean;
+    image: boolean;
+    albumart: boolean;
+    default: boolean;
+    forced: boolean;
     selected: boolean;
-    decoder?: string;
-    codec_desc?: string;
-    demux_w?: number;
-    demux_h?: number;
-    demux_fps?: number;
-    audio_channels?: number;
-    demux_channel_count?: number;
-    demux_samplerate?: number;
-};
+    mainSelection?: number;
+    external: boolean;
+    externalFilename?: string;
+    codec: string;
+    codecDesc?: string;
+    codecProfile?: string;
+    ffIndex?: number;
+    decoderDesc?: string;
+    demuxW?: number;
+    demuxH?: number;
+    demuxCropX?: number;
+    demuxCropY?: number;
+    demuxCropW?: number;
+    demuxCropH?: number;
+    demuxChannelCount?: number;
+    demuxChannels?: string;
+    demuxSamplerate?: number;
+    demuxFps?: number;
+    demuxBitrate?: number;
+    demuxRotation?: number;
+    demuxPar?: number;
+    audioChannels?: number;
+    replaygainTrackPeak?: number;
+    replaygainTrackGain?: number;
+    replaygainAlbumPeak?: number;
+    replaygainAlbumGain?: number;
+}
 
 export type CurrentTracks = {
     video?: Track;
@@ -132,23 +153,32 @@ export default class MpvPlayer {
         await invoke("mpv_pause");
     }
 
-    public static async get_tracks(): Promise<Track[]> {
-        return await invoke("mpv_get_tracks");
+    public static async getTracks(): Promise<Track[]> {
+        const rustTracks: any[] = await invoke("mpv_get_tracks");
+        return rustTracks.map(objectKeysToCamelCase) as Track[];
     }
 
-    public static async get_current_tracks(): Promise<CurrentTracks> {
-        return await invoke("mpv_get_current_tracks");
+    public static async getCurrentTracks(): Promise<CurrentTracks> {
+        const currentTracks: any = await invoke("mpv_get_current_tracks");
+        for (const k of Object.keys(currentTracks)) {
+            currentTracks[k] = objectKeysToCamelCase(currentTracks[k]);
+        }
+        return currentTracks;
     }
 
-    public static async set_tracks(
-        options: {
-            audio?: string;
-            subtitle?: string;
-            video?: string;
-        } = {}
-    ) {
+    public static async setTracks({
+        audioId,
+        subtitleId,
+        videoId,
+    }: {
+        audioId?: number;
+        subtitleId?: number;
+        videoId?: number;
+    } = {}) {
         return await invoke("mpv_set_tracks", {
-            ...options,
+            audio: audioId,
+            subtitle: subtitleId,
+            video: videoId,
         });
     }
 }

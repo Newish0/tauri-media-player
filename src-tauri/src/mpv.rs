@@ -361,7 +361,6 @@ impl Drop for Mpv {
 
 /// Track struct according to documentation at 
 /// https://mpv.io/manual/stable/#command-interface-track-list
-/// > **Note:** Only some fields are used (see all fields in documentation)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Track {
     pub id: i64,
@@ -371,27 +370,68 @@ pub struct Track {
     pub src_id: i64,
     pub title: Option<String>,
     pub lang: Option<String>,
-    pub codec: String,
+    #[serde(default)]
+    pub image: bool,
+    #[serde(default)]
+    pub albumart: bool,
+    #[serde(default)]
+    pub default: bool,
+    #[serde(default)]
+    pub forced: bool,
+    pub selected: bool,
+    #[serde(rename = "main-selection")]
+    pub main_selection: Option<i64>,
     #[serde(default)]
     pub external: bool,
-    pub selected: bool,
-    // Add other fields as needed
-    pub decoder: Option<String>,
+    #[serde(rename = "external-filename")]
+    pub external_filename: Option<String>,
+    pub codec: String,
     #[serde(rename = "codec-desc")]
     pub codec_desc: Option<String>,
+    #[serde(rename = "codec-profile")]
+    pub codec_profile: Option<String>,
+    #[serde(rename = "ff-index")]
+    pub ff_index: Option<i64>,
+    #[serde(rename = "decoder-desc")]
+    pub decoder_desc: Option<String>,
     #[serde(rename = "demux-w")]
     pub demux_w: Option<i64>,
     #[serde(rename = "demux-h")]
     pub demux_h: Option<i64>,
-    #[serde(rename = "demux-fps")]
-    pub demux_fps: Option<f64>,
-    #[serde(rename = "audio-channels")]
-    pub audio_channels: Option<i64>,
+    #[serde(rename = "demux-crop-x")]
+    pub demux_crop_x: Option<i64>,
+    #[serde(rename = "demux-crop-y")]
+    pub demux_crop_y: Option<i64>,
+    #[serde(rename = "demux-crop-w")]
+    pub demux_crop_w: Option<i64>,
+    #[serde(rename = "demux-crop-h")]
+    pub demux_crop_h: Option<i64>,
     #[serde(rename = "demux-channel-count")]
     pub demux_channel_count: Option<i64>,
+    #[serde(rename = "demux-channels")]
+    pub demux_channels: Option<String>,
     #[serde(rename = "demux-samplerate")]
     pub demux_samplerate: Option<i64>,
+    #[serde(rename = "demux-fps")]
+    pub demux_fps: Option<f64>,
+    #[serde(rename = "demux-bitrate")]
+    pub demux_bitrate: Option<i64>,
+    #[serde(rename = "demux-rotation")]
+    pub demux_rotation: Option<i64>,
+    #[serde(rename = "demux-par")]
+    pub demux_par: Option<f64>,
+    #[serde(rename = "audio-channels")]
+    pub audio_channels: Option<i64>,
+    #[serde(rename = "replaygain-track-peak")]
+    pub replaygain_track_peak: Option<f64>,
+    #[serde(rename = "replaygain-track-gain")]
+    pub replaygain_track_gain: Option<f64>,
+    #[serde(rename = "replaygain-album-peak")]
+    pub replaygain_album_peak: Option<f64>,
+    #[serde(rename = "replaygain-album-gain")]
+    pub replaygain_album_gain: Option<f64>,
 }
+
 
 /// The current tracks of the media being played.
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -5,6 +5,7 @@ import "./index.css";
 import Root from "@/routes/root";
 import App from "@/routes/app";
 import ErrorPage from "@/routes/error";
+import FocusedPlayer from "@/routes/focused-player";
 
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
@@ -17,7 +18,11 @@ const router = createBrowserRouter([
             {
                 path: "/app",
                 element: <App />,
-            }
+            },
+            {
+                path: "/focused-player",
+                element: <FocusedPlayer />,
+            },
         ],
     },
 ]);
