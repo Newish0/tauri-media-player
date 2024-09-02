@@ -7,12 +7,14 @@ mod utils;
 mod winapi_abstraction;
 
 use tauri::{Manager, Runtime};
+use utils::is_dev_mode;
 use winapi::shared::windef::HWND;
 
 use winapi_abstraction::*;
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_sql::Builder::default().build())
         .setup(|app| {
             let container_win = tauri::WindowBuilder::new(
                 app,
@@ -55,6 +57,10 @@ fn main() {
             .transparent(true)
             .build()
             .unwrap();
+
+            if is_dev_mode() {
+                app_win.open_devtools();
+            }
 
             // Set all other windows to be child of the container window; ORDER MATTERS!
             attach_child_to_parent_area(

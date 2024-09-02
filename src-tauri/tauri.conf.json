@@ -30,6 +30,12 @@
       "dialog": {
         "all": false,
         "open": true
+      },
+      "fs": {
+        "all": true,
+        "scope": [
+          "$RESOURCE/*"
+        ]
       }
     },
     "windows": [],
@@ -48,7 +54,8 @@
         "icons/icon.ico"
       ],
       "resources": [
-        "./lib/mpv/libmpv-2.dll"
+        "./lib/mpv/libmpv-2.dll",
+        "migrations/*"
       ]
     }
   }
