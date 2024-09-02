@@ -1,92 +1,38 @@
-import MpvPlayer, { MpvEventId, type Track } from "@/services/MpvPlayer";
-import { useState, useEffect } from "react";
 import { useWindowFullscreen } from "@/hooks/use-tauri-window";
+import MpvPlayer from "@/services/MpvPlayer";
+import { $mpvPlayerInfo, setPartialMpvPlayerInfo as setPartialInfo } from "@/stores/mpv-player-info";
+import { useStore } from "@nanostores/react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 type MpvPlayerHookOptions = {};
 
-type PlayerInfo = {
-    duration: number;
-    position: number;
-    volume: number;
-    isPaused: boolean;
-    path: string;
-    filename: string;
-    tracks: Track[];
-};
-
 export function useMpvPlayer({}: MpvPlayerHookOptions = {}) {
-    const [info, setInfo] = useState<PlayerInfo>({
-        duration: 0,
-        position: 0,
-        volume: 0,
-        isPaused: true,
-        path: "", // empty path ==> no file loaded
-        filename: "",
-        tracks: [],
-    });
-
-    useEffect(() => {
-        const fetchInfo = async () => {
-            // Get state and use default value if there is an error
-            const duration = await MpvPlayer.getDuration().catch(() => 0);
-            const position = await MpvPlayer.getPosition().catch(() => 0);
-            const volume = await MpvPlayer.getVolume().catch(() => 0);
-            const isPaused = await MpvPlayer.isPaused().catch(() => true);
-            const path = await MpvPlayer.getPath().catch(() => "");
-            const filename = await MpvPlayer.getFilename().catch(() => "");
-            const tracks = await MpvPlayer.getTracks().catch(() => []);
-
-            setInfo((prev) => ({
-                ...prev,
-                duration,
-                position,
-                volume,
-                isPaused,
-                path,
-                filename,
-                tracks,
-            }));
-        };
-
-        let intId = setInterval(fetchInfo, 1000);
-        MpvPlayer.on(MpvEventId.FileLoaded, fetchInfo);
-
-        fetchInfo(); // initial fetch
-
-        // Cleanup
-        return () => {
-            MpvPlayer.off(MpvEventId.FileLoaded, fetchInfo);
-            clearInterval(intId);
-        };
-    }, []);
+    const info = useStore($mpvPlayerInfo);
 
     return {
         info,
         seek(position: number) {
-            setInfo((prev) => ({ ...prev, position })); // optimistic update
+            setPartialInfo({ position }); // optimistic update
             MpvPlayer.seek(position).then(() =>
-                MpvPlayer.getDuration().then((duration) =>
-                    setInfo((prev) => ({ ...prev, duration }))
-                )
+                MpvPlayer.getDuration().then((duration) => setPartialInfo({ duration }))
             ); // actual update
         },
         play() {
-            setInfo((prev) => ({ ...prev, isPaused: false })); // optimistic update
+            setPartialInfo({ isPaused: false }); // optimistic update
             MpvPlayer.play()
                 .then(() => MpvPlayer.isPaused())
-                .then((isPaused) => setInfo((prev) => ({ ...prev, isPaused }))); // actual update
+                .then((isPaused) => setPartialInfo({ isPaused })); // actual update
         },
         pause() {
-            setInfo((prev) => ({ ...prev, isPaused: true })); // optimistic update
+            setPartialInfo({ isPaused: true }); // optimistic update
             MpvPlayer.pause().then(() =>
-                MpvPlayer.isPaused().then((isPaused) => setInfo((prev) => ({ ...prev, isPaused })))
+                MpvPlayer.isPaused().then((isPaused) => setPartialInfo({ isPaused }))
             ); // actual update
         },
         setVolume(volume: number) {
-            setInfo((prev) => ({ ...prev, volume })); // optimistic update
+            setPartialInfo({ volume }); // optimistic update
             MpvPlayer.setVolume(volume).then(() =>
-                MpvPlayer.getVolume().then((volume) => setInfo((prev) => ({ ...prev, volume })))
+                MpvPlayer.getVolume().then((volume) => setPartialInfo({ volume }))
             ); // actual update
         },
     } as const;
