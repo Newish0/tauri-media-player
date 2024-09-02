@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+# rust backend dynamic lib dependencies (must fetch those manually for now)
+src-tauri/lib/*
