@@ -46,6 +46,7 @@ function FocusedPlayer() {
             {/* Top container */}
             <div
                 className={cn(
+                    "bg-gradient-to-b from-black/50 to-transparent",
                     "absolute top-0 w-full p-2 transition-opacity duration-300",
                     isMouseActive ? "opacity-90" : "opacity-0"
                 )}

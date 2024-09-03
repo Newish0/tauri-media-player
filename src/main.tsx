@@ -6,6 +6,7 @@ import Root from "@/routes/root";
 import App from "@/routes/app";
 import ErrorPage from "@/routes/error";
 import FocusedPlayer from "@/routes/focused-player";
+import Playlist, { loader as playlistLoader } from "@/routes/playlist";
 
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
@@ -18,6 +19,13 @@ const router = createBrowserRouter([
             {
                 path: "/app",
                 element: <App />,
+                children: [
+                    {
+                        path: "/app/playlists/:id",
+                        element: <Playlist />,
+                        loader: playlistLoader,
+                    },
+                ],
             },
             {
                 path: "/focused-player",

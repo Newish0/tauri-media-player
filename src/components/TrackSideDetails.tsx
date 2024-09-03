@@ -8,6 +8,7 @@ const TrackSideDetails: React.FC = () => {
     const handleMpvWindowDoubleClick = () => {
         navigate("/focused-player");
     };
+    
     return (
         <div>
             <PlayerContextMenu>

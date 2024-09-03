@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 /**
  * Get the current fullscreen state of a window and a function to change it.
  * 
- * > **WARNING:** If fullscreen is toggle elsewhere, the value will be out of sync.
- * 
  * > **NOTE:** This hook requires the `window` permission.
  *
  * @param windowLabel The label of the window to check.
@@ -18,6 +16,11 @@ export function useWindowFullscreen(
 
     useEffect(() => {
         const window = WebviewWindow.getByLabel(windowLabel);
+
+        // Listen for fullscreen changes
+        window?.onResized(() => {
+            window?.isFullscreen().then(setIsFullscreen);
+        });
 
         // Get the initial state
         window?.isFullscreen().then(setIsFullscreen);
