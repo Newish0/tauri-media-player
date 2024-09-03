@@ -8,7 +8,7 @@ export function useMouseActivity(
     root: Window | Element | null | (Window | Element | null)[],
     options: MouseActivityOptions = {}
 ) {
-    const { inactiveDelay = 100 } = options;
+    const { inactiveDelay = 1000 } = options;
     const [isActive, setIsActive] = useState(false);
 
     useEffect(() => {
@@ -18,10 +18,11 @@ export function useMouseActivity(
             tmId = setTimeout(() => setIsActive(false), inactiveDelay);
         };
 
-        const handleMouseOver = () => setIsActive(true);
+        const handleMouseOver = () => {
+            setIsActive(true);
+        };
         const handleMouseLeave = () => setInactiveWithDelay();
         const handleMouseMove = () => {
-            if (isActive) return;
             setIsActive(true);
             setInactiveWithDelay();
         };
@@ -49,7 +50,7 @@ export function useMouseActivity(
         return () => {
             removeListeners(root);
         };
-    }, [root, inactiveDelay]);
+    }, [...(Array.isArray(root) ? [...root] : [root]), inactiveDelay]);
 
     return isActive;
 }

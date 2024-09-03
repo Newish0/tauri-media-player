@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 function FocusedPlayer() {
     const playerControlContainerRef = useRef<HTMLDivElement>(null);
     const isMouseActive = useMouseActivity([window], {
-        inactiveDelay: 1000,
+        inactiveDelay: 2000,
     });
 
     const {
