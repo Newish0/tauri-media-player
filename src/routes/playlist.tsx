@@ -1,58 +1,24 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useFullscreenAsFocusedPlayer, useMpvPlayer } from "@/hooks/use-mpv-player";
-import { cn, isMediaFileByFileExtension, isVideoFileByFileExtension } from "@/lib/utils";
+import { useMpvPlayer } from "@/hooks/use-mpv-player";
+import { cn, isVideoFileByFileExtension } from "@/lib/utils";
 import MpvPlayer, { MpvEventId } from "@/services/MpvPlayer";
-import { readDir } from "@tauri-apps/api/fs";
-import { dirname, basename } from "@tauri-apps/api/path";
 import { useEffect } from "react";
 import { LoaderFunction, useLoaderData, useNavigate, useRevalidator } from "react-router-dom";
 
+import { PlaylistEntry, PlaylistSvc } from "@/services/PlaylistManager";
 import { open } from "@tauri-apps/api/dialog";
-import { useWindowFullscreen } from "@/hooks/use-tauri-window";
-interface IPlaylistEntry {
-    name: string;
-    path: string;
-}
 
 export const loader = (async ({
     params,
 }): Promise<{
-    playlistEntries: IPlaylistEntry[];
+    playlistEntries: PlaylistEntry[];
 }> => {
     const { id } = params;
 
-    let playlistEntries: IPlaylistEntry[] = [];
+    if (!id) throw new Error("No playlist id provided");
 
-    /**
-     * Current folder playlist will show all media
-     * files in the current folder as playlist entries.
-     */
-    if (id === "current-folder") {
-        // TODO: move the generation of playlist data to the PLaylist service.
-        //       The loader should only call `Playlist.getPlaylistEntries("some-id")`.
-        //       IN the case of `current-folder` it should call the `Playlist.getPlaylistEntries("current-folder")`
-        //       The playlist service shall listen to the `MpvPlayer.on(MpvEventId.FileLoaded)` event and
-        //       update the playlist data when a new file is loaded. (aka always have the playlist ready to go)
-
-        const currentFilepath = await MpvPlayer.getPath().catch(() => undefined);
-
-        if (currentFilepath) {
-            const dirPath = await dirname(currentFilepath);
-            const files = await readDir(dirPath);
-            const mediaFiles = files.filter((f) => isMediaFileByFileExtension(f.path));
-
-            for (const f of mediaFiles) {
-                playlistEntries.push({
-                    name: f.name ?? (await basename(f.path)),
-                    path: f.path,
-                });
-            }
-        }
-    } else {
-        throw new Error("Other playlists not implemented yet.");
-    }
-
+    let playlistEntries: PlaylistEntry[] = await PlaylistSvc.getPlaylistEntries(id);
     return { playlistEntries };
 }) satisfies LoaderFunction;
 
@@ -70,7 +36,7 @@ const Playlist: React.FC = () => {
         };
     }, []);
 
-    const handlePlayEntry = (entry: IPlaylistEntry) => {
+    const handlePlayEntry = (entry: PlaylistEntry) => {
         MpvPlayer.loadFile(entry.path);
 
         // Go to focused player if the file is a video
