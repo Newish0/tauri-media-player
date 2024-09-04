@@ -6,24 +6,23 @@ import MpvPlayer, { MpvEventId } from "@/services/MpvPlayer";
 import { useEffect } from "react";
 import { LoaderFunction, useLoaderData, useNavigate, useRevalidator } from "react-router-dom";
 
-import { PlaylistEntry, PlaylistSvc } from "@/services/PlaylistManager";
+import { type PlaylistEntry, Playlist as PlaylistSvc } from "@/services/PlaylistManager";
 import { open } from "@tauri-apps/api/dialog";
 
 export const loader = (async ({
     params,
 }): Promise<{
-    playlistEntries: PlaylistEntry[];
+    playlist: PlaylistSvc;
 }> => {
     const { id } = params;
 
     if (!id) throw new Error("No playlist id provided");
 
-    let playlistEntries: PlaylistEntry[] = await PlaylistSvc.getPlaylistEntries(id);
-    return { playlistEntries };
+    return { playlist: await PlaylistSvc.get(id) };
 }) satisfies LoaderFunction;
 
 const Playlist: React.FC = () => {
-    const { playlistEntries } = useLoaderData() as Awaited<ReturnType<typeof loader>>;
+    const { playlist } = useLoaderData() as Awaited<ReturnType<typeof loader>>;
     const { info: playerInfo } = useMpvPlayer();
     const revalidator = useRevalidator();
     const navigate = useNavigate();
@@ -56,7 +55,7 @@ const Playlist: React.FC = () => {
         MpvPlayer.loadFile(path); // TODO: actually add file to playlist other than just play then call `handlePlayEntry`
     };
 
-    if (!playlistEntries.length) {
+    if (!playlist.entries.length) {
         return (
             <div className="h-full flex items-center justify-center flex-col">
                 <p className="text-muted-foreground">No entries in playlist</p>
@@ -70,7 +69,7 @@ const Playlist: React.FC = () => {
 
     return (
         <ScrollArea className="h-full space-y-1 px-1">
-            {playlistEntries.map((entry) => {
+            {playlist.entries.map((entry) => {
                 const isActive = playerInfo.path === entry.path;
 
                 return (

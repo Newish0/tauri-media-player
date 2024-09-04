@@ -8,7 +8,13 @@ export type PlaylistEntry = {
     name: string;
 };
 
-export class PlaylistSvc {
+export class Playlist {
+    private _entries: PlaylistEntry[];
+
+    private constructor(entries: PlaylistEntry[]) {
+        this._entries = entries;
+    }
+
     /**
      * Current folder playlist will show all media
      * files in the current folder as playlist entries.
@@ -34,11 +40,20 @@ export class PlaylistSvc {
         return playlistEntries;
     }
 
-    public static async getPlaylistEntries(id: "current-folder" | string): Promise<PlaylistEntry[]> {
+    public static async get(
+        id: string | "current-folder",
+        { createIfNotExists = true }: { createIfNotExists?: boolean } = {}
+    ): Promise<Playlist> {
         if (id === "current-folder") {
-            return PlaylistSvc.getCurrentFolderPlaylistEntries();
+            return new Playlist(await Playlist.getCurrentFolderPlaylistEntries());
         } else {
+            // TODO: implement other playlists with `createIfNotExists`
+
             throw new Error("Other playlists not implemented yet.");
         }
+    }
+
+    get entries() {
+        return this._entries;
     }
 }
