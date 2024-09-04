@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod metadata;
 mod mpv;
 mod mpv_tauri_commands;
 mod utils;
@@ -11,6 +12,14 @@ use utils::is_dev_mode;
 use winapi::shared::windef::HWND;
 
 use winapi_abstraction::*;
+
+#[tauri::command]
+fn get_media_info(path: &str) -> Result<metadata::SimplifiedMetadata, String> {
+    match metadata::parse_metadata(path) {
+        Ok(metadata) => Ok(metadata),
+        Err(e) => Err(e.to_string()),
+    }
+}
 
 fn main() {
     tauri::Builder::default()
@@ -129,7 +138,8 @@ fn main() {
             mpv_tauri_commands::mpv_register_events_callback,
             mpv_tauri_commands::mpv_get_tracks,
             mpv_tauri_commands::mpv_get_current_tracks,
-            mpv_tauri_commands::mpv_set_tracks
+            mpv_tauri_commands::mpv_set_tracks,
+            get_media_info
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
