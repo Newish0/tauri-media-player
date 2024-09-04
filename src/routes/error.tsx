@@ -11,10 +11,12 @@ export default function ErrorPage() {
         <div className="text-center space-y-2 my-16">
             <h1 className="text-3xl font-bold text-primary">Oops!</h1>
             <p className="text-xl text-primary">Sorry, an unexpected error has occurred.</p>
-            <p className="text-destructive">
-                <i>
-                    {error?.status} {error?.statusText || error?.message}
-                </i>
+            <div className="text-destructive">
+                <p>
+                    <i>
+                        {error?.status} {error?.statusText || error?.message}
+                    </i>
+                </p>
 
                 {/* Only show full error in dev mode */}
                 {import.meta.env.DEV && (
@@ -26,7 +28,7 @@ export default function ErrorPage() {
                         </CardContent>
                     </Card>
                 )}
-            </p>
+            </div>
 
             <Link to="/" className={buttonVariants({ variant: "link" })}>
                 Return to app

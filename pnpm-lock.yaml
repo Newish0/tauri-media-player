@@ -122,6 +122,9 @@ dependencies:
   lucide-react:
     specifier: ^0.436.0
     version: 0.436.0(react@18.3.1)
+  mime:
+    specifier: ^4.0.4
+    version: 4.0.4
   nanostores:
     specifier: ^0.11.3
     version: 0.11.3
@@ -3754,6 +3757,12 @@ packages:
     dependencies:
       braces: 3.0.3
       picomatch: 2.3.1
+
+  /mime@4.0.4:
+    resolution: {integrity: sha512-v8yqInVjhXyqP6+Kw4fV3ZzeMRqEW6FotRsKXjRS5VMTNIuXsdRoAvklpoRgSqXm6o9VNH4/C0mgedko9DdLsQ==}
+    engines: {node: '>=16'}
+    hasBin: true
+    dev: false
 
   /minimatch@9.0.5:
     resolution: {integrity: sha512-G6T0ZX48xgozx7587koeX9Ys2NYy6Gmv//P89sEte9V9whIapMNF4idKxnW2QtCcLiTWlb/wfCabAtAFWhhBow==}

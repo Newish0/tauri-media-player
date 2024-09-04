@@ -49,6 +49,7 @@
     "embla-carousel-react": "^8.2.0",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.436.0",
+    "mime": "^4.0.4",
     "nanostores": "^0.11.3",
     "next-themes": "^0.3.0",
     "react": "^18.2.0",
