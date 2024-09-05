@@ -1,5 +1,51 @@
-import { integer, sqliteTable, text, } from "drizzle-orm/sqlite-core";
+import { relations } from "drizzle-orm";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
-export const mediaEntires = sqliteTable("media_entries", {
-    filePath: text("file_path").notNull(),
+export const playlist = sqliteTable("playlist", {
+    id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+    name: text("name").notNull(),
+    index: integer("index").notNull(),
 });
+
+export const playlistEntry = sqliteTable("playlist_entry", {
+    id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+    path: text("path").notNull(),
+    index: integer("index").notNull(),
+    playlistId: integer("playlist_id")
+        .notNull()
+        .references(() => playlist.id),
+});
+
+export const mediaInfo = sqliteTable("media_info", {
+    path: text("path").notNull().primaryKey(), // TODO: use file hash as key. For now, we store a media info per file (ignore dup file for simplicity)
+    title: text("title").notNull(),
+    artist: text("artist"),
+    album: text("album"),
+    year: integer("year"),
+    track: integer("track"),
+    totalTracks: integer("total_tracks"),
+    disc: integer("disc"),
+    totalDiscs: integer("total_discs"),
+    genre: text("genre"),
+    pictures: text("pictures"),
+    duration: integer("duration"),
+    bitrate: integer("bitrate"),
+    sampleRate: integer("sample_rate"),
+    channels: integer("channels"),
+    bitDepth: integer("bit_depth"),
+});
+
+export const playlistEntryRelations = relations(playlistEntry, ({ one }) => ({
+    mediaInfo: one(mediaInfo, {
+        fields: [playlistEntry.path],
+        references: [mediaInfo.path],
+    }),
+    playlist: one(playlist, {
+        fields: [playlistEntry.playlistId],
+        references: [playlist.id],
+    }),
+}));
+
+export const playlistRelations = relations(playlist, ({ many }) => ({
+    entries: many(playlistEntry),
+}));
