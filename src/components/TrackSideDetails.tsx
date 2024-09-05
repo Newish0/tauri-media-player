@@ -8,12 +8,12 @@ const TrackSideDetails: React.FC = () => {
     const handleMpvWindowDoubleClick = () => {
         navigate("/focused-player");
     };
-    
+
     return (
-        <div>
+        <div className="aspect-square w-full">
             <PlayerContextMenu>
                 <MPVWindowProxy
-                    className="aspect-square w-full"
+                    className="h-full w-full"
                     onDoubleClick={handleMpvWindowDoubleClick}
                 />
             </PlayerContextMenu>

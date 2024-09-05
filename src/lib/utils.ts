@@ -87,7 +87,7 @@ export function isMediaFileByFileExtension(filePath: string): boolean {
     if (!fileExtension) return false;
 
     // "Media" mime types
-    const mediaTypes = ["audio", "video", "image"];
+    const mediaTypes = ["audio", "video"];
     return isExtensionOfType(fileExtension, mediaTypes);
 }
 
