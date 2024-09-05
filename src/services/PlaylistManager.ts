@@ -76,10 +76,20 @@ export class Playlist {
                         where: (mediaInfo, { eq }) => eq(mediaInfo.path, f.path),
                     });
 
-                    if (!mediaInfo) mediaInfo = await Playlist.createMediaInfoFromFile(f);
+                    console.log(mediaInfo);
 
-                    // This shall not be awaited.
-                    await db.insert(MediaInfoSchema).values(mediaInfo).onConflictDoNothing();
+                    if (!mediaInfo) {
+                        mediaInfo = await Playlist.createMediaInfoFromFile(f);
+
+                        // This shall not be awaited.
+                        await db
+                            .insert(MediaInfoSchema)
+                            .values(mediaInfo)
+                            .onConflictDoNothing()
+                            .catch(() => {
+                                /* ignore */
+                            });
+                    }
 
                     const entry: PlaylistEntry = {
                         path: f.path,

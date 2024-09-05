@@ -14,7 +14,7 @@ use winapi::shared::windef::HWND;
 use winapi_abstraction::*;
 
 #[tauri::command]
-fn get_media_info(path: &str) -> Result<metadata::SimplifiedMetadata, String> {
+async fn get_media_info(path: &str) -> Result<metadata::SimplifiedMetadata, String> {
     match metadata::parse_metadata(path) {
         Ok(metadata) => Ok(metadata),
         Err(e) => Err(e.to_string()),
