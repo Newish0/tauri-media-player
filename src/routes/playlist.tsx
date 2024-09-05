@@ -82,7 +82,7 @@ const Playlist: React.FC = () => {
                             isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
                         )}
                     >
-                        {entry.name}
+                        {entry.mediaInfo.title}
                     </div>
                 );
             })}

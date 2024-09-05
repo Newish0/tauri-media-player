@@ -27,12 +27,13 @@ export const mediaInfo = sqliteTable("media_info", {
     disc: integer("disc"),
     totalDiscs: integer("total_discs"),
     genre: text("genre"),
-    pictures: text("pictures"),
+    // pictures: text("pictures"), // TODO: handle pictures later
     duration: integer("duration"),
     bitrate: integer("bitrate"),
     sampleRate: integer("sample_rate"),
     channels: integer("channels"),
     bitDepth: integer("bit_depth"),
+    isVideo: integer("is_video", { mode: "boolean" }).default(false),
 });
 
 export const playlistEntryRelations = relations(playlistEntry, ({ one }) => ({

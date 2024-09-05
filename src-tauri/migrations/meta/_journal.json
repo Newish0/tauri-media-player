@@ -15,6 +15,20 @@
       "when": 1725513322568,
       "tag": "0001_silly_tiger_shark",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1725514013082,
+      "tag": "0002_many_dreadnoughts",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1725516086243,
+      "tag": "0003_boring_bloodstrike",
+      "breakpoints": true
     }
   ]
 }
