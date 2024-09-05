@@ -38,8 +38,28 @@ export const db = drizzle<typeof schema>(
             return { rows: [] };
         }
 
+        const columnsRegex = /SELECT\s+(.+)\s+FROM/i;
+        const columnsMatch = sql.match(columnsRegex);
+        let columns: string[] = [];
+        if (columnsMatch) {
+            columns = columnsMatch[1].split(",");
+            columns = columns.map((column) => column.trim().replace(/"/g, ""));
+        }
+
+        // Workaround to get object back to what Drizzle expects
+        // Source: OliveiraCleidson - https://github.com/tdwesten/tauri-drizzle-sqlite-proxy-demo/issues/1#issuecomment-2304630172
         rows = rows.map((row: any) => {
-            return Object.values(row);
+            // Order the values in the row based on the order of the columns
+            // This is necessary because the order of the values in the row is not guaranteed
+            // when using the select method
+            const orderedRow: Record<string, any> = {};
+            columns.forEach((column) => {
+                orderedRow[column] = row[column];
+            });
+
+            // The logic can be replaced for not use Object Values, but I worked in this 4 a.m.
+            // I will refactor
+            return Object.values(orderedRow);
         });
 
         // If the method is "all", return all rows
