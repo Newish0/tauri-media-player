@@ -453,6 +453,12 @@ impl MpvPlayer {
         Ok(player)
     }
 
+    fn escape_path(path: &str) -> String {
+        path.replace('\\', "\\\\")
+            .replace('\'', "\\\'")
+            .replace('\"', "\\\"")
+    }
+
     pub fn destroy(&self) -> Result<(), MpvError> {
         self.mpv.destroy()
     }
@@ -466,7 +472,11 @@ impl MpvPlayer {
     }
 
     pub fn load_file(&self, path: &str) -> Result<(), MpvError> {
-        self.mpv.command_string(&format!("loadfile '{}'", path))
+        let escaped_path = Self::escape_path(path);
+        println!("Loading file: {}", path);
+        println!("Loading file(escaped): {}", escaped_path);
+        self.mpv
+            .command_string(&format!("loadfile \"{}\"", escaped_path))
     }
 
     pub fn play(&self) -> Result<(), MpvError> {
@@ -617,11 +627,25 @@ impl MpvPlayer {
             let path_str = path.as_ref().to_str().ok_or_else(|| {
                 MpvError::CommandError("Failed to convert path to string".to_string())
             })?;
+            let escaped_path = Self::escape_path(path_str);
             self.mpv
-                .command_string(&format!("loadfile '{}' append", path_str))?;
+                .command_string(&format!("loadfile \"{}\" append", escaped_path))?;
         }
 
         Ok(())
+    }
+
+    /// Loads a playlist from a file. (Don't confuse with `set_playlist_from_paths`)
+    ///
+    /// The path should be a file path to a playlist file, such as an M3U or a PLS file.
+    ///
+    /// # Errors
+    ///
+    /// * `MpvError::CommandError` if the command failed.
+    pub fn load_playlist(&self, path: &str) -> Result<(), MpvError> {
+        let escaped_path = Self::escape_path(path);
+        self.mpv
+            .command_string(&format!("loadlist \"{}\"", escaped_path))
     }
 
     pub fn clear_playlist(&self) -> Result<(), MpvError> {
