@@ -21,6 +21,9 @@ export function formatSeconds(seconds: number) {
         : `${m}:${s < 10 ? "0" : ""}${s}`;
 }
 
+// Precompile the regular expression
+const SNAKE_KEBAB_REGEX = /[-_]([a-z])/g;
+
 /**
  * Converts a string from snake_case or kebab-case to camelCase.
  *
@@ -28,26 +31,29 @@ export function formatSeconds(seconds: number) {
  * @returns The camelCase version of the input string.
  */
 export function toCamel(s: string): string {
-    return s.replace(/([-_][a-z])/g, (group) =>
-        group.toUpperCase().replace("-", "").replace("_", "")
-    );
+    return s.replace(SNAKE_KEBAB_REGEX, (_, char) => char.toUpperCase());
 }
 
 /**
- * Recursively converts the keys of an object from snake_case or kebab-case to camelCase.
+ * Recursively converts the keys of an object from snake_case or kebab-case to camelCase in-place.
  *
  * @param obj - The object whose keys need to be converted.
- * @returns A new object with all keys converted to camelCase.
+ * @returns The modified object with all keys converted to camelCase.
  */
-export function objectKeysToCamelCase(obj: Record<string, any>): Record<string, any> {
+export function objectKeysToCamelCase<T>(obj: T): T {
     if (Array.isArray(obj)) {
-        return obj.map((item) => objectKeysToCamelCase(item));
-    } else if (obj !== null && obj.constructor === Object) {
-        return Object.keys(obj).reduce((result, key) => {
+        obj.forEach((item, index) => {
+            obj[index] = objectKeysToCamelCase(item);
+        });
+    } else if (obj !== null && typeof obj === "object") {
+        Object.keys(obj).forEach((key) => {
             const camelKey = toCamel(key);
-            result[camelKey] = objectKeysToCamelCase(obj[key]);
-            return result;
-        }, {} as Record<string, any>);
+            if (camelKey !== key) {
+                (obj as any)[camelKey] = (obj as any)[key];
+                delete (obj as any)[key];
+            }
+            (obj as any)[camelKey] = objectKeysToCamelCase((obj as any)[camelKey]);
+        });
     }
     return obj;
 }

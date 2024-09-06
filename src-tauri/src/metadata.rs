@@ -24,7 +24,7 @@ pub struct SimplifiedMetadata {
     pub bit_depth: Option<u8>,
 }
 
-pub fn parse_metadata(path: &str) -> Result<SimplifiedMetadata, Box<dyn std::error::Error>> {
+pub async fn parse_metadata(path: &str) -> Result<SimplifiedMetadata, Box<dyn std::error::Error>> {
     let path = Path::new(path);
     let tagged_file = Probe::open(path)?.guess_file_type()?.read()?;
 

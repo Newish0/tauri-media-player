@@ -67,40 +67,36 @@ export class Playlist {
             const files = await readDir(dirPath);
             const mediaFiles = files.filter((f) => isMediaFileByFileExtension(f.path));
 
-            playlistEntries = await Promise.all(
-                mediaFiles.map(async (f, index) => {
-                    let mediaInfo:
-                        | undefined
-                        | typeof MediaInfoSchema.$inferInsert
-                        | typeof MediaInfoSchema.$inferSelect = await db.query.mediaInfo.findFirst({
-                        where: (mediaInfo, { eq }) => eq(mediaInfo.path, f.path),
-                    });
+            for (const f of mediaFiles) {
+                let mediaInfo:
+                    | undefined
+                    | typeof MediaInfoSchema.$inferInsert
+                    | typeof MediaInfoSchema.$inferSelect = await db.query.mediaInfo.findFirst({
+                    where: (mediaInfo, { eq }) => eq(mediaInfo.path, f.path),
+                });
 
-                    console.log(mediaInfo);
+                if (!mediaInfo) {
+                    mediaInfo = await Playlist.createMediaInfoFromFile(f);
 
-                    if (!mediaInfo) {
-                        mediaInfo = await Playlist.createMediaInfoFromFile(f);
+                    // This shall not be awaited.
+                    await db
+                        .insert(MediaInfoSchema)
+                        .values(mediaInfo)
+                        .onConflictDoNothing()
+                        .catch(() => {
+                            /* ignore */
+                        });
+                }
 
-                        // This shall not be awaited.
-                        await db
-                            .insert(MediaInfoSchema)
-                            .values(mediaInfo)
-                            .onConflictDoNothing()
-                            .catch(() => {
-                                /* ignore */
-                            });
-                    }
-
-                    const entry: PlaylistEntry = {
-                        path: f.path,
-                        id: -1,
-                        playlistId: -1,
-                        index,
-                        mediaInfo,
-                    };
-                    return entry;
-                })
-            );
+                const entry: PlaylistEntry = {
+                    path: f.path,
+                    id: -1,
+                    playlistId: -1,
+                    index: playlistEntries.length,
+                    mediaInfo,
+                };
+                playlistEntries.push(entry);
+            } // for
         }
 
         return playlistEntries;
