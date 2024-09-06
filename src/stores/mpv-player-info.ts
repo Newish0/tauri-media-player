@@ -53,6 +53,7 @@ export function setPartialMpvPlayerInfo(partialInfo: Partial<PlayerInfo>) {
 
     let intId = setInterval(fetchInfo, 1000);
     MpvPlayer.on(MpvEventId.FileLoaded, fetchInfo);
+    MpvPlayer.on(MpvEventId.StartFile, fetchInfo);
     MpvPlayer.on(MpvEventId.EndFile, fetchInfo);
 
     fetchInfo(); // initial fetch
@@ -60,6 +61,7 @@ export function setPartialMpvPlayerInfo(partialInfo: Partial<PlayerInfo>) {
     // Cleanup func
     return () => {
         MpvPlayer.off(MpvEventId.FileLoaded, fetchInfo);
+        MpvPlayer.off(MpvEventId.StartFile, fetchInfo);
         MpvPlayer.off(MpvEventId.EndFile, fetchInfo);
         clearInterval(intId);
     };

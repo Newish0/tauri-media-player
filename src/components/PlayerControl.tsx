@@ -12,8 +12,11 @@ import {
     SpeakerModerateIcon,
     SpeakerOffIcon,
     SpeakerQuietIcon,
+    TrackNextIcon,
+    TrackPreviousIcon,
 } from "@radix-ui/react-icons";
 import { useState } from "react";
+import MpvPlayer from "@/services/MpvPlayer";
 
 const PlayerControl: React.FC = () => {
     const { info: playerInfo, seek, play, pause, setVolume } = useMpvPlayer();
@@ -55,6 +58,14 @@ const PlayerControl: React.FC = () => {
         setIsFullScreen(!isFullScreen);
     };
 
+    const handleNextTrack = () => {
+        MpvPlayer.playlistNext();
+    };
+
+    const handlePreviousTrack = () => {
+        MpvPlayer.playlistPrev();
+    };
+
     return (
         <div className="w-full h-full flex flex-col justify-center gap-1">
             <div className="flex justify-between gap-2">
@@ -84,6 +95,24 @@ const PlayerControl: React.FC = () => {
                         disabled={!playerInfo.path}
                     >
                         {playerInfo.isPaused ? <PlayIcon></PlayIcon> : <PauseIcon></PauseIcon>}
+                    </Button>
+
+                    <Button
+                        size={"icon"}
+                        variant={"ghost"}
+                        disabled={!playerInfo.path}
+                        onClick={handlePreviousTrack}
+                    >
+                        <TrackPreviousIcon />
+                    </Button>
+
+                    <Button
+                        size={"icon"}
+                        variant={"ghost"}
+                        disabled={!playerInfo.path}
+                        onClick={handleNextTrack}
+                    >
+                        <TrackNextIcon />
                     </Button>
                 </div>
 

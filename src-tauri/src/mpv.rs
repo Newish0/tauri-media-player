@@ -4,6 +4,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::ffi::{c_char, CStr, CString};
 use std::os::raw::{c_double, c_int, c_void};
+use std::path::Path;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
@@ -358,8 +359,7 @@ impl Drop for Mpv {
     }
 }
 
-
-/// Track struct according to documentation at 
+/// Track struct according to documentation at
 /// https://mpv.io/manual/stable/#command-interface-track-list
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Track {
@@ -431,7 +431,6 @@ pub struct Track {
     #[serde(rename = "replaygain-album-gain")]
     pub replaygain_album_gain: Option<f64>,
 }
-
 
 /// The current tracks of the media being played.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -593,6 +592,40 @@ impl MpvPlayer {
 
     pub fn set_subtitle_track(&self, track_id: i64) -> Result<(), MpvError> {
         self.mpv.set_property_int("sid", track_id)
+    }
+
+    pub fn playlist_next(&self) -> Result<(), MpvError> {
+        self.mpv.command_string("playlist-next")
+    }
+
+    pub fn playlist_prev(&self) -> Result<(), MpvError> {
+        self.mpv.command_string("playlist-prev")
+    }
+
+    pub fn get_playlist_pos(&self) -> Result<i64, MpvError> {
+        self.mpv.get_property_int("playlist-pos")
+    }
+
+    pub fn set_playlist_pos(&self, pos: i64) -> Result<(), MpvError> {
+        self.mpv.set_property_int("playlist-pos", pos)
+    }
+
+    pub fn set_playlist_from_paths<P: AsRef<Path>>(&self, paths: &[P]) -> Result<(), MpvError> {
+        self.clear_playlist()?;
+
+        for path in paths {
+            let path_str = path.as_ref().to_str().ok_or_else(|| {
+                MpvError::CommandError("Failed to convert path to string".to_string())
+            })?;
+            self.mpv
+                .command_string(&format!("loadfile '{}' append", path_str))?;
+        }
+
+        Ok(())
+    }
+
+    pub fn clear_playlist(&self) -> Result<(), MpvError> {
+        self.mpv.command_string("playlist-clear")
     }
 
     pub fn set_tracks(

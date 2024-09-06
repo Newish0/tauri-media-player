@@ -139,6 +139,12 @@ fn main() {
             mpv_tauri_commands::mpv_get_tracks,
             mpv_tauri_commands::mpv_get_current_tracks,
             mpv_tauri_commands::mpv_set_tracks,
+            mpv_tauri_commands::mpv_playlist_next,
+            mpv_tauri_commands::mpv_playlist_prev,
+            mpv_tauri_commands::mpv_set_playlist_pos,
+            mpv_tauri_commands::mpv_get_playlist_pos,
+            mpv_tauri_commands::mpv_set_playlist_from_paths,
+            mpv_tauri_commands::mpv_clear_playlist,
             get_media_info
         ])
         .run(tauri::generate_context!())

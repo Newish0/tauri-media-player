@@ -182,3 +182,39 @@ pub fn mpv_set_tracks(
     let player = MPV_PLAYER.lock().unwrap();
     player.set_tracks(video, audio, subtitle)
 }
+
+#[tauri::command]
+pub fn mpv_playlist_next() -> Result<(), MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.playlist_next()
+}
+
+#[tauri::command]
+pub fn mpv_playlist_prev() -> Result<(), MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.playlist_prev()
+}
+
+#[tauri::command]
+pub fn mpv_get_playlist_pos() -> Result<i64, MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.get_playlist_pos()
+}
+
+#[tauri::command]
+pub fn mpv_set_playlist_pos(pos: i64) -> Result<(), MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.set_playlist_pos(pos)
+}
+
+#[tauri::command]
+pub fn mpv_set_playlist_from_paths(paths: Vec<String>) -> Result<(), MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.set_playlist_from_paths(&paths)
+}
+
+#[tauri::command]
+pub fn mpv_clear_playlist() -> Result<(), MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.clear_playlist()
+}

@@ -68,6 +68,7 @@ export class Playlist {
             const mediaFiles = files.filter((f) => isMediaFileByFileExtension(f.path));
 
             for (const f of mediaFiles) {
+                // Try to get media info from the database.
                 let mediaInfo:
                     | undefined
                     | typeof MediaInfoSchema.$inferInsert
@@ -78,7 +79,7 @@ export class Playlist {
                 if (!mediaInfo) {
                     mediaInfo = await Playlist.createMediaInfoFromFile(f);
 
-                    // This shall not be awaited.
+                    // Add media info to the database.
                     await db
                         .insert(MediaInfoSchema)
                         .values(mediaInfo)

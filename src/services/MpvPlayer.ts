@@ -185,4 +185,42 @@ export default class MpvPlayer {
             video: videoId,
         });
     }
+
+    public static async setPlaylistFromPaths(paths: string[], replace = true) {
+        if (replace) await MpvPlayer.clearPlaylist();
+
+        return await invoke("mpv_set_playlist_from_paths", {
+            paths,
+        });
+    }
+
+    public static async clearPlaylist() {
+        return await invoke("mpv_clear_playlist");
+    }
+
+    public static async playlistNext() {
+        return await invoke("mpv_playlist_next");
+    }
+
+    public static async playlistPrev() {
+        return await invoke("mpv_playlist_prev");
+    }
+
+    public static async getPlaylistPos(): Promise<number> {
+        return await invoke("mpv_get_playlist_pos");
+    }
+
+    /**
+     * Set playlist position from 1 to N.
+     *
+     * VERY IMPORTANT: 1 is the first item in the playlist.
+     *
+     * @param pos in ones index
+     * @returns
+     */
+    public static async setPlaylistPos(pos: number) {
+        return await invoke("mpv_set_playlist_pos", {
+            pos,
+        });
+    }
 }

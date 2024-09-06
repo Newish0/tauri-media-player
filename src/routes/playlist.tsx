@@ -36,6 +36,8 @@ const Playlist: React.FC = () => {
     const navigation = useNavigation();
 
     useEffect(() => {
+        MpvPlayer.setPlaylistFromPaths(playlist.entries.map((entry) => entry.path));
+
         MpvPlayer.on(MpvEventId.FileLoaded, revalidator.revalidate);
 
         return () => {
@@ -44,7 +46,9 @@ const Playlist: React.FC = () => {
     }, []);
 
     const handlePlayEntry = (entry: PlaylistEntry) => {
-        MpvPlayer.loadFile(entry.path);
+        const index = playlist.entries.findIndex((e) => e.path === entry.path);
+        console.log("[Playlist Page] handlePlayEntry", index + 1);
+        MpvPlayer.setPlaylistPos(index + 1);
 
         // Go to focused player if the file is a video
         if (isVideoFileByFileExtension(entry.path)) {
