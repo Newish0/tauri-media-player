@@ -43,7 +43,7 @@ const Playlist: React.FC = () => {
         return () => {
             MpvPlayer.off(MpvEventId.FileLoaded, revalidator.revalidate);
         };
-    }, []);
+    }, [playlist]);
 
     const handlePlayEntry = (entry: PlaylistEntry) => {
         const index = playlist.entries.findIndex((e) => e.path === entry.path);
