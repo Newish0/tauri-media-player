@@ -4,10 +4,17 @@ import { useMpvPlayer } from "@/hooks/use-mpv-player";
 import { cn, isVideoFileByFileExtension } from "@/lib/utils";
 import MpvPlayer, { MpvEventId } from "@/services/MpvPlayer";
 import { useEffect } from "react";
-import { LoaderFunction, useLoaderData, useNavigate, useRevalidator } from "react-router-dom";
+import {
+    LoaderFunction,
+    useLoaderData,
+    useNavigate,
+    useNavigation,
+    useRevalidator,
+} from "react-router-dom";
 
 import { type PlaylistEntry, Playlist as PlaylistSvc } from "@/services/PlaylistManager";
 import { open } from "@tauri-apps/api/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const loader = (async ({
     params,
@@ -26,6 +33,7 @@ const Playlist: React.FC = () => {
     const { info: playerInfo } = useMpvPlayer();
     const revalidator = useRevalidator();
     const navigate = useNavigate();
+    const navigation = useNavigation();
 
     useEffect(() => {
         MpvPlayer.on(MpvEventId.FileLoaded, revalidator.revalidate);
@@ -54,6 +62,16 @@ const Playlist: React.FC = () => {
 
         MpvPlayer.loadFile(path); // TODO: actually add file to playlist other than just play then call `handlePlayEntry`
     };
+
+    if (navigation.state === "loading") {
+        return (
+            <div className="h-full space-y-1 p-1">
+                {new Array(8).fill(null).map((_, i) => (
+                    <Skeleton className="h-8 w-full rounded-md" key={i} />
+                ))}
+            </div>
+        );
+    }
 
     if (!playlist.entries.length) {
         return (
