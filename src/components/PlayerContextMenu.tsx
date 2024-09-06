@@ -87,7 +87,7 @@ const PlayerContextMenu: React.FC<React.PropsWithChildren> = ({ children }) => {
                 <ContextMenuSub>
                     <ContextMenuSubTrigger inset>Tracks</ContextMenuSubTrigger>
                     <ContextMenuSubContent>
-                        <TracksSubmenuContent tracks={info.tracks} />
+                        <TracksMenuContent tracks={info.tracks} />
                     </ContextMenuSubContent>
                 </ContextMenuSub>
             </ContextMenuContent>
@@ -95,8 +95,8 @@ const PlayerContextMenu: React.FC<React.PropsWithChildren> = ({ children }) => {
     );
 };
 
-const TracksSubmenuContent: React.FC<{ tracks: Track[] }> = ({ tracks }) => {
-    const TYPES = [
+const TracksMenuContent: React.FC<{ tracks: Track[] }> = ({ tracks }) => {
+    const TYPES: { title: string; value: "video" | "audio" | "sub" }[] = [
         {
             title: "Video",
             value: "video",
@@ -111,36 +111,54 @@ const TracksSubmenuContent: React.FC<{ tracks: Track[] }> = ({ tracks }) => {
         },
     ];
 
-    const handleTrackChange = (trackIdValue: string) => {
-        const trackId = parseInt(trackIdValue);
+    const handleTrackChange = (type: "video" | "audio" | "sub", trackId: number) => {
+        let key: "videoId" | "audioId" | "subtitleId";
+        switch (type) {
+            case "video":
+                key = "videoId";
+                break;
+            case "audio":
+                key = "audioId";
+                break;
+            case "sub":
+                key = "subtitleId";
+                break;
+        }
 
-        // TODO: set track
+        MpvPlayer.setTracks({ [key]: trackId });
     };
 
     return (
         <>
-            {TYPES.map((type) => (
-                <ContextMenuRadioGroup
-                    value={tracks.find((t) => t.type === type.value && t.selected)?.id.toString()}
-                    onValueChange={handleTrackChange}
-                >
-                    <ContextMenuLabel inset>{type.title}</ContextMenuLabel>
-                    <ContextMenuSeparator />
+            {TYPES.map(({ title, value: type }) => {
+                const selectedTrackId = tracks.find((t) => t.type === type && t.selected)?.id;
 
-                    {tracks
-                        .filter((t) => t.type === type.value)
-                        .map((t) => (
-                            <ContextMenuRadioItem value={t.id.toString()} key={t.id}>
-                                <TrackText track={t} />
-                            </ContextMenuRadioItem>
-                        ))}
-                </ContextMenuRadioGroup>
-            ))
+                return (
+                    <ContextMenuRadioGroup
+                        key={type}
+                        value={selectedTrackId?.toString()}
+                        onValueChange={(trackIdValue) =>
+                            handleTrackChange(type, parseInt(trackIdValue))
+                        }
+                    >
+                        <ContextMenuLabel inset>{title}</ContextMenuLabel>
+                        <ContextMenuSeparator />
+
+                        {tracks
+                            .filter((t) => t.type === type)
+                            .map((t) => (
+                                <ContextMenuRadioItem value={t.id.toString()} key={t.id}>
+                                    <TrackText track={t} />
+                                </ContextMenuRadioItem>
+                            ))}
+                    </ContextMenuRadioGroup>
+                );
+            })
                 // Add separators between radio menus
-                .map((eln, i) => (
+                .map((element, index) => (
                     <>
-                        {i > 0 && <ContextMenuSeparator />}
-                        {eln}
+                        {index > 0 && <ContextMenuSeparator />}
+                        {element}
                     </>
                 ))}
         </>
