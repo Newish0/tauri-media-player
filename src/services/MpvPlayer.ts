@@ -73,6 +73,13 @@ export type CurrentTracks = {
     subtitle?: Track;
 };
 
+export type PlaylistEntry = {
+    filename: string;
+    current: boolean;
+    playing: boolean;
+    title?: string;
+    id?: number;
+};
 export default class MpvPlayer {
     private static eventListeners = new Map<MpvEventId, Set<MpvEventCallback>>();
 
@@ -204,6 +211,11 @@ export default class MpvPlayer {
 
     public static async playlistPrev() {
         return await invoke("mpv_playlist_prev");
+    }
+
+    public static async getPlaylist() {
+        const playlist: any[] = await invoke("mpv_get_playlist");
+        return playlist.map(objectKeysToCamelCase) as PlaylistEntry[];
     }
 
     public static async getPlaylistPos(): Promise<number> {

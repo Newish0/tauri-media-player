@@ -141,6 +141,7 @@ fn main() {
             mpv_tauri_commands::mpv_set_tracks,
             mpv_tauri_commands::mpv_playlist_next,
             mpv_tauri_commands::mpv_playlist_prev,
+            mpv_tauri_commands::mpv_get_playlist,
             mpv_tauri_commands::mpv_set_playlist_pos,
             mpv_tauri_commands::mpv_get_playlist_pos,
             mpv_tauri_commands::mpv_set_playlist_from_paths,

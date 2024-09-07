@@ -196,6 +196,12 @@ pub fn mpv_playlist_prev() -> Result<(), MpvError> {
 }
 
 #[tauri::command]
+pub fn mpv_get_playlist() -> Result<Vec<PlaylistEntry>, MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.get_playlist()
+}
+
+#[tauri::command]
 pub fn mpv_get_playlist_pos() -> Result<i64, MpvError> {
     let player = MPV_PLAYER.lock().unwrap();
     player.get_playlist_pos()

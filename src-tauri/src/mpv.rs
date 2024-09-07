@@ -439,6 +439,19 @@ pub struct CurrentTracks {
     pub audio: Option<Track>,
     pub subtitle: Option<Track>,
 }
+
+/// An entry in the playlist.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlaylistEntry {
+    pub filename: String,
+    #[serde(default)]
+    pub current: bool,
+    #[serde(default)]
+    pub playing: bool,
+    pub title: Option<String>,
+    pub id: Option<i64>,
+}
+
 pub struct MpvPlayer {
     mpv: Arc<Mpv>,
 }
@@ -610,6 +623,17 @@ impl MpvPlayer {
 
     pub fn playlist_prev(&self) -> Result<(), MpvError> {
         self.mpv.command_string("playlist-prev")
+    }
+
+    pub fn get_playlist(&self) -> Result<Vec<PlaylistEntry>, MpvError> {
+        let playlist_json = self.mpv.get_property_string("playlist")?;
+        let playlist: Vec<PlaylistEntry> = serde_json::from_str(&playlist_json).map_err(|e| {
+            MpvError::GetPropertyError(format!(
+                "Failed to parse playlist: {}. JSON: {}",
+                e, playlist_json
+            ))
+        })?;
+        Ok(playlist)
     }
 
     pub fn get_playlist_pos(&self) -> Result<i64, MpvError> {
