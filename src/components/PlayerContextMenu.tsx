@@ -1,26 +1,25 @@
 import {
     ContextMenu,
+    ContextMenuCheckboxItem,
     ContextMenuContent,
     ContextMenuItem,
-    ContextMenuTrigger,
-    ContextMenuSeparator,
-    ContextMenuSub,
-    ContextMenuSubTrigger,
-    ContextMenuSubContent,
-    ContextMenuShortcut,
-    ContextMenuCheckboxItem,
-    ContextMenuRadioGroup,
     ContextMenuLabel,
+    ContextMenuRadioGroup,
     ContextMenuRadioItem,
+    ContextMenuSeparator,
+    ContextMenuShortcut,
+    ContextMenuSub,
+    ContextMenuSubContent,
+    ContextMenuSubTrigger,
+    ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { useFullscreenAsFocusedPlayer, useMpvPlayer } from "@/hooks/use-mpv-player";
 import MpvPlayer, { Track } from "@/services/MpvPlayer";
 
 import { open } from "@tauri-apps/api/dialog";
 
-import { getLanguageFullName } from "@/lib/utils";
-import { title } from "process";
 import { useWindowFullscreen } from "@/hooks/use-tauri-window";
+import { getLanguageFullName } from "@/lib/utils";
 
 const PlayerContextMenu: React.FC<React.PropsWithChildren> = ({ children }) => {
     const { info } = useMpvPlayer();
