@@ -21,15 +21,17 @@ export const loader = async ({ params }: { params: { id?: string } }): Promise<L
     const playlist = await PlaylistSvc.get(id);
     await MpvPlayer.setPlaylistFromPaths(playlist.entries.map((entry) => entry.path));
 
-    // Get the currently playing file and find its index in the playlist
-    const currentlyPlaying = await MpvPlayer.getPath().catch(() => null);
-    const indexOfCurrentFile = playlist.entries.findIndex(
-        (entry) => entry.path === currentlyPlaying
-    );
+    if (playlist.entries.length > 0) {
+        // Get the currently playing file and find its index in the playlist
+        const currentlyPlaying = await MpvPlayer.getPath().catch(() => null);
+        const indexOfCurrentFile = playlist.entries.findIndex(
+            (entry) => entry.path === currentlyPlaying
+        );
 
-    // If the currently playing file is found in the playlist, set the playlist position to it
-    if (indexOfCurrentFile !== -1) {
-        MpvPlayer.setPlaylistPos(indexOfCurrentFile + 1); // +1 because the playlist position is one-indexed
+        // If the currently playing file is found in the playlist, set the playlist position to it
+        if (indexOfCurrentFile !== -1) {
+            MpvPlayer.setPlaylistPos(indexOfCurrentFile + 1); // +1 because the playlist position is one-indexed
+        }
     }
 
     return { playlist };
