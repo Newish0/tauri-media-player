@@ -3,52 +3,65 @@ import Database from "tauri-plugin-sql-api";
 import * as schema from "@/db/schema";
 import { migrate } from "./migrate";
 
-/**
- * Represents the result of a SELECT query.
- */
-export type SelectQueryResult = {
-    [key: string]: any;
-};
+type QueryResult = Record<string, unknown>;
 
-/**
- * Loads the sqlite database via the Tauri Proxy.
- */
-export const sqlite = await Database.load("sqlite:app.db");
+class TauriSQLiteAdapter {
+    private sqlite: Database;
 
-/**
- * The drizzle database instance.
- */
-export const db = drizzle<typeof schema>(
-    async (sql, params, method) => {
-        let rows: any = [];
-        let results = [];
+    private constructor(sqlite: Database) {
+        this.sqlite = sqlite;
+    }
 
-        // If the query is a SELECT, use the select method
-        if (isSelectQuery(sql)) {
-            rows = await sqlite.select(sql, params).catch((e) => {
-                console.error("SQL Error:", e);
-                return [];
-            });
-        } else {
-            // Otherwise, use the execute method
-            rows = await sqlite.execute(sql, params).catch((e) => {
-                console.error("SQL Error:", e);
-                return [];
-            });
-            return { rows: [] };
+    public static async create(dbPath: string, autoRunMigrations = true) {
+        const adapter = new TauriSQLiteAdapter(await Database.load(`sqlite:${dbPath}`));
+        if (autoRunMigrations) await migrate(adapter.sqlite);
+        return adapter;
+    }
+
+    async query(
+        sql: string,
+        params: unknown[],
+        method: string
+    ): Promise<{ rows: any[][] | any[] }> {
+        const isSelect = sql.trim().toLowerCase().startsWith("select");
+        let result: any;
+
+        try {
+            // HACK: Use `sqlite.select` for eeverything including `insert` and `update`
+            //       so `returning` works properly. See below for the expected code.
+            result = await this.sqlite.select(sql, params);
+
+            // Expected code for the above HACK:
+            // if (isSelect) {
+            //     result = await this.sqlite.select(sql, params);
+            // } else {
+            //     result = await this.sqlite.execute(sql, params);
+            // }
+        } catch (error) {
+            console.error("SQL Error:", error);
+            throw error;
         }
 
-        const columnsRegex = /SELECT\s+(.+)\s+FROM/i;
-        const columnsMatch = sql.match(columnsRegex);
-        let columns: string[] = [];
-        if (columnsMatch) {
-            columns = columnsMatch[1].split(",");
-            columns = columns.map((column) => column.trim().replace(/"/g, ""));
-        }
+        const columns = this.extractColumns(sql);
+        const orderedRows = this.orderRows(result, columns);
 
-        // Workaround to get object back to what Drizzle expects
+        // If the method is "all", return all rows
+        const finalResult = method === "all" ? orderedRows : orderedRows[0];
+
+        return { rows: finalResult };
+    }
+
+    private extractColumns(sql: string): string[] {
+        const columnsRegex = /SELECT\s+(.+?)\s+FROM/i;
+        const match = sql.match(columnsRegex);
+        if (!match) return [];
+        return match[1].split(",").map((col) => col.trim().replace(/"/g, ""));
+    }
+
+    private orderRows(rows: QueryResult[], columns: string[]): string[][] {
+        // HACK: Workaround to get object back to what Drizzle expects
         // Source: OliveiraCleidson - https://github.com/tdwesten/tauri-drizzle-sqlite-proxy-demo/issues/1#issuecomment-2304630172
-        rows = rows.map((row: any) => {
+        const orderedRows = rows.map((row: any) => {
             // Order the values in the row based on the order of the columns
             // This is necessary because the order of the values in the row is not guaranteed
             // when using the select method
@@ -62,23 +75,14 @@ export const db = drizzle<typeof schema>(
             return Object.values(orderedRow);
         });
 
-        // If the method is "all", return all rows
-        results = method === "all" ? rows : rows[0];
-
-        return { rows: results };
-    },
-    // Pass the schema to the drizzle instance
-    { schema: schema, logger: false }
-);
-
-/**
- * Checks if the given SQL query is a SELECT query.
- * @param sql The SQL query to check.
- * @returns True if the query is a SELECT query, false otherwise.
- */
-function isSelectQuery(sql: string): boolean {
-    const selectRegex = /^\s*SELECT\b/i;
-    return selectRegex.test(sql);
+        return orderedRows;
+    }
 }
 
-await migrate(); // migrate each time we try to use db
+const dbPath = "app.db";
+const adapter = await TauriSQLiteAdapter.create(dbPath);
+
+export const db = drizzle(
+    (sql: string, params: unknown[], method: string) => adapter.query(sql, params, method),
+    { schema, logger: true }
+);
