@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 
 import Root from "@/routes/root";
-import App from "@/routes/app";
+import App, { loader as appLoader } from "@/routes/app";
 import ErrorPage from "@/routes/error";
 import FocusedPlayer from "@/routes/focused-player";
 import Playlist, { loader as playlistLoader } from "@/routes/playlist";
@@ -19,6 +19,7 @@ const router = createBrowserRouter([
             {
                 path: "/app",
                 element: <App />,
+                loader: appLoader,
                 children: [
                     {
                         path: "/app/playlists/:id",

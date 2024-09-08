@@ -5,11 +5,12 @@ import { isMediaFileByFileExtension, isVideoFileByFileExtension } from "@/lib/ut
 import { db } from "@/db/database";
 import {
     mediaInfo as MediaInfoSchema,
-    type playlist as PlaylistSchema,
+    playlist as PlaylistSchema,
     type playlistEntry as PlaylistEntrySchema,
 } from "@/db/schema";
 import Metadata from "@/services/Metadata";
 import { InferQueryModel } from "@/db/types";
+import { count, eq } from "drizzle-orm";
 
 export type PlaylistEntry =
     | (typeof PlaylistEntrySchema.$inferInsert & {
@@ -24,11 +25,22 @@ export type PlaylistEntry =
           }
       >;
 
-export class Playlist {
+type DBPlaylist = typeof PlaylistSchema.$inferSelect;
+export class Playlist implements DBPlaylist {
     private _entries: PlaylistEntry[];
 
-    private constructor(entries: PlaylistEntry[]) {
+    public id: number;
+    public name: string;
+    public index: number;
+
+    private constructor(
+        entries: PlaylistEntry[],
+        playlist: DBPlaylist = { id: -1, name: "Unknown Playlist", index: -1 }
+    ) {
         this._entries = entries;
+        this.id = playlist.id;
+        this.name = playlist.name;
+        this.index = playlist.index;
     }
 
     private static async createMediaInfoFromFile(
@@ -103,6 +115,31 @@ export class Playlist {
         return playlistEntries;
     }
 
+    public static async create(name?: string): Promise<Playlist> {
+        if (!name) {
+            name = "New Playlist";
+        }
+
+        // New playlist will be added at the end of the playlist list.
+        const currentNumberOfPlaylists = await db
+            .select({ count: count() })
+            .from(PlaylistSchema)
+            .then((r) => r[0].count);
+
+        const playlists = await db
+            .insert(PlaylistSchema)
+            .values({ name, index: currentNumberOfPlaylists })
+            .returning();
+        const playlist = playlists[0];
+
+        if (!playlist) {
+            console.log(playlists, playlist);
+            throw new Error("Failed to create playlist");
+        }
+
+        return new Playlist([], playlist);
+    }
+
     public static async get(
         id: string | "current-folder",
         { createIfNotExists = true }: { createIfNotExists?: boolean } = {}
@@ -110,10 +147,46 @@ export class Playlist {
         if (id === "current-folder") {
             return new Playlist(await Playlist.getCurrentFolderPlaylistEntries());
         } else {
-            // TODO: implement other playlists with `createIfNotExists`
+            let dbPlaylist = await db.query.playlist.findFirst({
+                where: (playlist, { eq }) => eq(playlist.id, parseInt(id)),
+            });
 
-            throw new Error("Other playlists not implemented yet.");
+            if (dbPlaylist) {
+                return new Playlist([], dbPlaylist);
+            } else if (createIfNotExists) {
+                return Playlist.create();
+            } else {
+                throw new Error("Playlist not found");
+            }
         }
+    }
+
+    public static async getAll(): Promise<Playlist[]> {
+        const playlists = await db.query.playlist.findMany();
+        return playlists.map((playlist) => new Playlist([], playlist));
+    }
+
+    public async update(playlist: Partial<Omit<this, "id" | "entries">>) {
+        // Update playlist name in the database.
+        const updatedPlaylist = await db
+            .update(PlaylistSchema)
+            .set({ ...playlist })
+            .where(eq(PlaylistSchema.id, this.id))
+            .returning()
+            .then((r) => r[0]);
+
+        if (!updatedPlaylist) {
+            throw new Error("Failed to edit playlist");
+        }
+
+        this.name = updatedPlaylist.name;
+        this.index = updatedPlaylist.index;
+
+        return this;
+    }
+
+    public async delete() {
+        await db.delete(PlaylistSchema).where(eq(PlaylistSchema.id, this.id));
     }
 
     get entries() {
