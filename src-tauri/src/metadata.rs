@@ -16,7 +16,7 @@ pub struct SimplifiedMetadata {
     pub disc: Option<u32>,
     pub total_discs: Option<u32>,
     pub genre: Option<String>,
-    pub pictures: Option<Vec<Vec<u8>>>,
+    // pub pictures: Option<Vec<Vec<u8>>>,
     pub duration: f64,
     pub bitrate: Option<u32>,
     pub sample_rate: Option<u32>,
@@ -43,7 +43,7 @@ pub async fn parse_metadata(path: &str) -> Result<SimplifiedMetadata, Box<dyn st
         disc: None,
         total_discs: None,
         genre: None,
-        pictures: None,
+        // pictures: None,
         duration: properties.duration().as_secs_f64(),
         bitrate: properties.audio_bitrate(),
         sample_rate: properties.sample_rate(),
@@ -62,8 +62,8 @@ pub async fn parse_metadata(path: &str) -> Result<SimplifiedMetadata, Box<dyn st
         metadata.total_discs = tag.disk_total();
         metadata.total_tracks = tag.track_total();
 
-        let pictures = tag.pictures().iter().map(|p| p.data().to_vec()).collect();
-        metadata.pictures = Some(pictures);
+        // let pictures = tag.pictures().iter().map(|p| p.data().to_vec()).collect();
+        // metadata.pictures = Some(pictures);
     }
 
     Ok(metadata)

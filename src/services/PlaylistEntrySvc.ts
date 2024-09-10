@@ -2,7 +2,7 @@ import { db } from "@/db/database";
 import { InferQueryModel } from "@/db/types";
 import { count } from "drizzle-orm";
 import { playlistEntry as PlaylistEntryTable } from "@/db/schema";
-import { getMediaInfo } from "./Metadata";
+import { getMediaInfo } from "./MediaInfo";
 
 export type IPlaylistEntry = InferQueryModel<
     "playlistEntry",

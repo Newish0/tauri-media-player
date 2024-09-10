@@ -15,7 +15,7 @@ type TauriMediaMetadata = {
     disc?: number;
     totalDiscs?: number;
     genre?: string;
-    pictures?: Array<Array<number>>;
+    // pictures?: Array<Array<number>>;
     duration: number;
     bitrate?: number;
     sampleRate?: number;
