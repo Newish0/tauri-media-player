@@ -6,6 +6,8 @@ mod mpv;
 mod mpv_tauri_commands;
 mod winapi_abstraction;
 
+use std::path::Path;
+
 use tauri::{Manager, Runtime};
 use winapi::shared::windef::HWND;
 
@@ -27,8 +29,16 @@ async fn db_execute(
     sql: String,
     params: Vec<String>,
 ) -> Result<Vec<Vec<String>>, String> {
+
+    // Create the file if it doesn't exist
+    let db_path_str = db_path.clone();
+    let db_path = Path::new(&db_path);
+    if !db_path.exists() {
+        std::fs::File::create(db_path).map_err(|e| e.to_string())?;
+    }
+
     // Establish a connection to the SQLite database
-    let mut conn = SqliteConnection::connect(&format!("sqlite:{}", db_path))
+    let mut conn = SqliteConnection::connect(&format!("sqlite:{}", db_path_str))
         .await
         .map_err(|e| e.to_string())?;
 
