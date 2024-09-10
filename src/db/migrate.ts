@@ -1,6 +1,6 @@
 import { readDir, readTextFile } from "@tauri-apps/api/fs";
 import { join, resourceDir } from "@tauri-apps/api/path";
-import Database from "tauri-plugin-sql-api";
+import { Database } from "./database";
 
 export type ProxyMigrator = (migrationQueries: string[]) => Promise<void>;
 
@@ -41,13 +41,13 @@ export async function migrate(sqlite: Database) {
     for (const migration of migrations) {
         const hash = migration.name?.replace(".sql", "");
 
-        const dbMigrations = (await sqlite.select(
+        const dbMigrations = (await sqlite.execute(
             /*sql*/ `SELECT id, hash, created_at FROM "__drizzle_migrations" ORDER BY created_at DESC`
-        )) as unknown as { id: number; hash: string; created_at: number }[];
+        )) as unknown as [/* id */ number, /* hash */ string, /* created_at */ number][];
 
         const hasBeenRun = (hash: string) =>
             dbMigrations.find((dbMigration) => {
-                return dbMigration?.hash === hash;
+                return dbMigration[1] === hash;
             });
 
         if (hash && hasBeenRun(hash) === undefined) {
@@ -56,7 +56,7 @@ export async function migrate(sqlite: Database) {
             sqlite.execute(sql, []);
             sqlite.execute(
                 /*sql*/ `INSERT INTO "__drizzle_migrations" (hash, created_at) VALUES ($1, $2)`,
-                [hash, Date.now()]
+                [hash, Date.now().toString()]
             );
         }
     }

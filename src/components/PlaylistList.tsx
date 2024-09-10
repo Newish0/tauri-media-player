@@ -1,6 +1,11 @@
+import {
+    createPlaylist,
+    deletePlaylistById,
+    updatePlaylistById,
+    type IPlaylist,
+} from "@/services/PlaylistSvc";
 import React, { useCallback } from "react";
 import PlaylistListItem from "./PlaylistListItem";
-import { Playlist } from "@/services/PlaylistManager";
 import {
     ContextMenu,
     ContextMenuContent,
@@ -9,42 +14,40 @@ import {
 } from "./ui/context-menu";
 import { ScrollArea } from "./ui/scroll-area";
 
-const PlaylistList: React.FC<{ playlists: Playlist[] }> = ({ playlists: defaultPlaylists }) => {
+const PlaylistList: React.FC<{ playlists: IPlaylist[] }> = ({ playlists: defaultPlaylists }) => {
     const [playlists, setPlaylists] = React.useState(defaultPlaylists);
 
     const handleNewPlaylist = useCallback(() => {
-        Playlist.create().then((newPlaylist) => {
-            setPlaylists([...playlists, newPlaylist]); // assume new playlist is added at the end
+        createPlaylist().then((newPlaylist) => {
+            if (!newPlaylist) return console.error("Failed to create new playlist"); // TODO: show error
+
+            setPlaylists((playlists) => [...playlists, newPlaylist]); // assume new playlist is added at the end
         });
     }, [playlists, setPlaylists]);
 
     const handlePlayingEdit = useCallback(
         async ({ id, name }: { id: string | number; name: string }) => {
-            const updatedPlaylist = await playlists.find((p) => p.id === id)?.update({ name });
-            if (!updatedPlaylist) return;
+            updatePlaylistById(parseInt(id.toString()), { name }).then((updatedPlaylist) => {
+                if (!updatedPlaylist) return;
 
-            setPlaylists(
-                playlists.map((p) => {
-                    if (p.id === id) {
-                        return updatedPlaylist;
-                    }
-                    return p;
-                })
-            );
+                setPlaylists((playlists) =>
+                    playlists.map((p) => {
+                        if (p.id === id) return updatedPlaylist;
+                        return p;
+                    })
+                );
+            });
         },
         [playlists, setPlaylists]
     );
 
     const handlePlaylistDelete = useCallback(
         ({ id }: { id: string | number }) => {
-            const playlist = playlists.find((p) => p.id === id);
-            if (!playlist) return;
-
-            playlist.delete().then(() => {
-                const newPlaylists = playlists.filter((p) => p.id !== id);
-                console.log(newPlaylists);
-                setPlaylists(newPlaylists); // optimistic update
-            }); // TODO: show error
+            deletePlaylistById(parseInt(id.toString()))
+                .then(() => {
+                    setPlaylists((playlists) => playlists.filter((p) => p.id !== id));
+                })
+                .catch(console.error); // TODO: show error
         },
         [playlists, setPlaylists]
     );

@@ -1,17 +1,18 @@
 import PlayerControl from "@/components/PlayerControl";
 import PlaylistList from "@/components/PlaylistList";
 import TrackSideDetails from "@/components/TrackSideDetails";
-import TitledScrollArea from "@/components/ui/tittled-scroll-area";
-import { Playlist } from "@/services/PlaylistManager";
+import { getAllPlaylists, type IPlaylist } from "@/services/PlaylistSvc";
 import { useEffect } from "react";
-import { Outlet, useLoaderData, useLocation, useNavigate, useRevalidator } from "react-router-dom";
+import { Outlet, useLoaderData, useLocation, useNavigate } from "react-router-dom";
 
 type LoaderData = {
-    playlists: Playlist[];
+    playlists: IPlaylist[];
 };
 
 export const loader = async (): Promise<LoaderData> => {
-    const playlists = await Playlist.getAll();
+    console.log("Loading app...");
+    const playlists = await getAllPlaylists();
+    console.log(playlists);
     return { playlists };
 };
 
@@ -20,7 +21,6 @@ const App: React.FC = () => {
 
     const location = useLocation();
     const navigate = useNavigate();
-    const revalidator = useRevalidator();
 
     useEffect(() => {
         // TODO: navigate to last visited playlist (after implementing persistent user stuff for volume etc...)

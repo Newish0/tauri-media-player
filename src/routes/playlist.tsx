@@ -1,6 +1,6 @@
-import React, { useEffect, useCallback } from "react";
-import { useLoaderData, useNavigate, useNavigation, useRevalidator } from "react-router-dom";
 import { open } from "@tauri-apps/api/dialog";
+import React, { useCallback, useEffect } from "react";
+import { useLoaderData, useNavigate, useNavigation, useRevalidator } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,31 +8,42 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useMpvPlayer } from "@/hooks/use-mpv-player";
 import { cn, isVideoFileByFileExtension } from "@/lib/utils";
 import MpvPlayer, { MpvEventId } from "@/services/MpvPlayer";
-import { PlaylistEntry, Playlist as PlaylistSvc } from "@/services/PlaylistManager";
+import { type IPlaylist, getPlaylistById } from "@/services/PlaylistSvc";
+
+type IPlaylistEntry = IPlaylist["entries"][number];
 
 type LoaderData = {
-    playlist: PlaylistSvc;
+    playlist: IPlaylist;
 };
 
 export const loader = async ({ params }: { params: { id?: string } }): Promise<LoaderData> => {
     const { id } = params;
     if (!id) throw new Error("No playlist id provided");
 
-    const playlist = await PlaylistSvc.get(id);
-    await MpvPlayer.setPlaylistFromPaths(playlist.entries.map((entry) => entry.path));
+    if (id == "current-folder")
+        return {
+            playlist: { entries: [], id: "current-folder", index: -1, name: "Current Folder" },
+        };
 
-    if (playlist.entries.length > 0) {
-        // Get the currently playing file and find its index in the playlist
-        const currentlyPlaying = await MpvPlayer.getPath().catch(() => null);
-        const indexOfCurrentFile = playlist.entries.findIndex(
-            (entry) => entry.path === currentlyPlaying
-        );
+    const playlist = await getPlaylistById(parseInt(id));
 
-        // If the currently playing file is found in the playlist, set the playlist position to it
-        if (indexOfCurrentFile !== -1) {
-            MpvPlayer.setPlaylistPos(indexOfCurrentFile + 1); // +1 because the playlist position is one-indexed
-        }
-    }
+    if (!playlist) throw new Error("Playlist not found");
+
+    // const playlist = await PlaylistSvc.get(id);
+    // await MpvPlayer.setPlaylistFromPaths(playlist.entries.map((entry) => entry.path));
+
+    // if (playlist.entries.length > 0) {
+    //     // Get the currently playing file and find its index in the playlist
+    //     const currentlyPlaying = await MpvPlayer.getPath().catch(() => null);
+    //     const indexOfCurrentFile = playlist.entries.findIndex(
+    //         (entry) => entry.path === currentlyPlaying
+    //     );
+
+    //     // If the currently playing file is found in the playlist, set the playlist position to it
+    //     if (indexOfCurrentFile !== -1) {
+    //         MpvPlayer.setPlaylistPos(indexOfCurrentFile + 1); // +1 because the playlist position is one-indexed
+    //     }
+    // }
 
     return { playlist };
 };
@@ -62,7 +73,7 @@ const Playlist: React.FC = () => {
     }, [playlist, revalidator]);
 
     const handlePlayEntry = useCallback(
-        (entry: PlaylistEntry) => {
+        (entry: IPlaylistEntry) => {
             const index = playlist.entries.findIndex((e) => e.path === entry.path);
             console.log("[Playlist Page] handlePlayEntry", index + 1);
             MpvPlayer.setPlaylistPos(index + 1);
@@ -118,9 +129,9 @@ const Playlist: React.FC = () => {
 };
 
 interface PlaylistItemProps {
-    entry: PlaylistEntry;
+    entry: IPlaylistEntry;
     isActive: boolean;
-    onPlay: (entry: PlaylistEntry) => void;
+    onPlay: (entry: IPlaylistEntry) => void;
 }
 
 const PlaylistItem: React.FC<PlaylistItemProps> = React.memo(({ entry, isActive, onPlay }) => (

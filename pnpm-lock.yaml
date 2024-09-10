@@ -161,9 +161,6 @@ dependencies:
   tailwindcss-animate:
     specifier: ^1.0.7
     version: 1.0.7(tailwindcss@3.4.10)
-  tauri-plugin-sql-api:
-    specifier: github:tauri-apps/tauri-plugin-sql#v1
-    version: github.com/tauri-apps/tauri-plugin-sql/7ae8847ab1f2252e8b6f0fe44af215ac40664fd6
   vaul:
     specifier: ^0.9.1
     version: 0.9.1(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1)(react@18.3.1)
@@ -4534,12 +4531,4 @@ packages:
 
   /zod@3.23.8:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
-    dev: false
-
-  github.com/tauri-apps/tauri-plugin-sql/7ae8847ab1f2252e8b6f0fe44af215ac40664fd6:
-    resolution: {tarball: https://codeload.github.com/tauri-apps/tauri-plugin-sql/tar.gz/7ae8847ab1f2252e8b6f0fe44af215ac40664fd6}
-    name: tauri-plugin-sql-api
-    version: 0.0.0
-    dependencies:
-      '@tauri-apps/api': 1.6.0
     dev: false

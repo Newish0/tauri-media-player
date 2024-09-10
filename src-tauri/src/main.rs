@@ -13,6 +13,8 @@ use winapi::shared::windef::HWND;
 
 use winapi_abstraction::*;
 
+use sqlx::{Column, Connection, Row, SqliteConnection, TypeInfo, ValueRef};
+
 #[tauri::command]
 async fn get_media_info(path: String) -> Result<metadata::SimplifiedMetadata, String> {
     match metadata::parse_metadata(&path).await {
@@ -21,9 +23,63 @@ async fn get_media_info(path: String) -> Result<metadata::SimplifiedMetadata, St
     }
 }
 
+#[tauri::command]
+async fn db_execute(
+    db_path: String,
+    sql: String,
+    params: Vec<String>,
+) -> Result<Vec<Vec<String>>, String> {
+    // Establish a connection to the SQLite database
+    let mut conn = SqliteConnection::connect(&format!("sqlite:{}", db_path))
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // Create a query builder
+    let mut query = sqlx::query(&sql);
+
+    // Bind parameters to the query
+    for param in params {
+        query = query.bind(param);
+    }
+
+    // Execute the query
+    let rows = match query.fetch_all(&mut conn).await {
+        Ok(rows) => rows,
+        Err(e) => {
+            return Err(e.to_string());
+        }
+    };
+
+    // Convert the result to Vec<Vec<String>>
+    let result: Vec<Vec<String>> = rows
+        .iter()
+        .map(|row| {
+            (0..row.len())
+                .map(|i| {
+                    let value = row.try_get_raw(i).unwrap();
+                    match value.type_info().name() {
+                        "TEXT" => row.try_get::<String, _>(i).unwrap_or_default(),
+                        "INTEGER" => row
+                            .try_get::<i64, _>(i)
+                            .map(|v| v.to_string())
+                            .unwrap_or_default(),
+                        "REAL" => row
+                            .try_get::<f64, _>(i)
+                            .map(|v| v.to_string())
+                            .unwrap_or_default(),
+                        "BLOB" => "<BLOB>".to_string(), // TODO: might want to handle this differently
+                        _ => "".to_string(),
+                    }
+                })
+                .collect()
+        })
+        .collect();
+
+    Ok(result)
+}
+
 fn main() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_sql::Builder::default().build())
         .setup(|app| {
             let container_win = tauri::WindowBuilder::new(
                 app,
@@ -146,7 +202,8 @@ fn main() {
             mpv_tauri_commands::mpv_get_playlist_pos,
             mpv_tauri_commands::mpv_set_playlist_from_paths,
             mpv_tauri_commands::mpv_clear_playlist,
-            get_media_info
+            get_media_info,
+            db_execute
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
