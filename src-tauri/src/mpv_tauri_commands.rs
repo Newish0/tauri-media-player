@@ -1,5 +1,4 @@
 use crate::mpv::{self};
-use crate::utils::is_dev_mode;
 
 use mpv::*;
 use once_cell::sync::Lazy;
@@ -42,9 +41,8 @@ pub fn init_mpv(win_to_attach_to: HWND) {
     //     })
     //     .expect("Failed to register event callback");
 
-    if !is_dev_mode() {
-        player.disable_osd().expect("Failed to disable OSD");
-    }
+    #[cfg(not(dev))]
+    player.disable_osd().expect("Failed to disable OSD");
 }
 
 #[tauri::command]

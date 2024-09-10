@@ -4,11 +4,9 @@
 mod metadata;
 mod mpv;
 mod mpv_tauri_commands;
-mod utils;
 mod winapi_abstraction;
 
 use tauri::{Manager, Runtime};
-use utils::is_dev_mode;
 use winapi::shared::windef::HWND;
 
 use winapi_abstraction::*;
@@ -123,9 +121,9 @@ fn main() {
             .build()
             .unwrap();
 
-            if is_dev_mode() {
-                app_win.open_devtools();
-            }
+            #[cfg(dev)]
+            app_win.open_devtools();
+            
 
             // Set all other windows to be child of the container window; ORDER MATTERS!
             attach_child_to_parent_area(
