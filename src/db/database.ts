@@ -36,7 +36,7 @@ class TauriSQLiteAdapter {
         try {
             result = await this.sqlite.execute(
                 sql,
-                params.map((param: any) => param.toString())
+                params.map((param: any) => `${param}`)
             );
         } catch (error) {
             console.error("SQL Error:", error);

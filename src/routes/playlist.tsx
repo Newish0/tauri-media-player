@@ -9,11 +9,18 @@ import { useMpvPlayer } from "@/hooks/use-mpv-player";
 import { cn, isVideoFileByFileExtension } from "@/lib/utils";
 import MpvPlayer, { MpvEventId } from "@/services/MpvPlayer";
 import { type IPlaylist, getPlaylistById } from "@/services/PlaylistSvc";
+import { createPlaylistEntry } from "@/services/PlaylistEntrySvc";
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 type IPlaylistEntry = IPlaylist["entries"][number];
 
 type LoaderData = {
-    playlist: IPlaylist;
+    playlist: { id: "current-folder" | number } & Omit<IPlaylist, "id">; // basically `IPlaylist` but `id` can be "current-folder" or number
 };
 
 export const loader = async ({ params }: { params: { id?: string } }): Promise<LoaderData> => {
@@ -29,22 +36,6 @@ export const loader = async ({ params }: { params: { id?: string } }): Promise<L
 
     if (!playlist) throw new Error("Playlist not found");
 
-    // const playlist = await PlaylistSvc.get(id);
-    // await MpvPlayer.setPlaylistFromPaths(playlist.entries.map((entry) => entry.path));
-
-    // if (playlist.entries.length > 0) {
-    //     // Get the currently playing file and find its index in the playlist
-    //     const currentlyPlaying = await MpvPlayer.getPath().catch(() => null);
-    //     const indexOfCurrentFile = playlist.entries.findIndex(
-    //         (entry) => entry.path === currentlyPlaying
-    //     );
-
-    //     // If the currently playing file is found in the playlist, set the playlist position to it
-    //     if (indexOfCurrentFile !== -1) {
-    //         MpvPlayer.setPlaylistPos(indexOfCurrentFile + 1); // +1 because the playlist position is one-indexed
-    //     }
-    // }
-
     return { playlist };
 };
 
@@ -55,43 +46,35 @@ const Playlist: React.FC = () => {
     const navigate = useNavigate();
     const navigation = useNavigation();
 
-    useEffect(() => {
-        // Revalidate on file load if the currently playing file is not in the playlist
-        const handleFileLoaded = async () => {
-            const currentlyPlaying = await MpvPlayer.getPath();
-            const isPlayingFileInPlaylist = playlist.entries.some(
-                (entry) => entry.path === currentlyPlaying
-            );
+    const handlePlayEntry = async (entry: IPlaylistEntry) => {
+        const index = playlist.entries.findIndex((e) => e.path === entry.path);
 
-            if (!isPlayingFileInPlaylist) {
-                revalidator.revalidate();
+        console.log("PLAY ENTRY", entry, index);
+
+        await MpvPlayer.setPlaylistFromPaths(playlist.entries.map((e) => e.path));
+
+        await MpvPlayer.setPlaylistPos(index + 1); // TODO: investigate regarding the 1's indexing
+
+        if (isVideoFileByFileExtension(entry.path)) {
+            navigate("/focused-player");
+        }
+    };
+
+    const handleAddFileToPlaylist = async () => {
+        const paths = await open({ multiple: true });
+        if (!paths) return;
+
+        if (playlist.id === "current-folder")
+            return console.warn("Cannot add to current folder... TODO: show error");
+
+        if (Array.isArray(paths)) {
+            for (const path of paths) {
+                await createPlaylistEntry(path, playlist.id).then(() => revalidator.revalidate());
             }
-        };
-
-        MpvPlayer.on(MpvEventId.FileLoaded, handleFileLoaded);
-        return () => MpvPlayer.off(MpvEventId.FileLoaded, handleFileLoaded);
-    }, [playlist, revalidator]);
-
-    const handlePlayEntry = useCallback(
-        (entry: IPlaylistEntry) => {
-            const index = playlist.entries.findIndex((e) => e.path === entry.path);
-            console.log("[Playlist Page] handlePlayEntry", index + 1);
-            MpvPlayer.setPlaylistPos(index + 1);
-
-            if (isVideoFileByFileExtension(entry.path)) {
-                navigate("/focused-player");
-            }
-        },
-        [playlist.entries, navigate]
-    );
-
-    const handleAddFileToPlaylist = useCallback(async () => {
-        const path = await open({ multiple: false });
-        if (!path || Array.isArray(path)) return;
-
-        MpvPlayer.loadFile(path);
-        // TODO: Implement proper playlist addition logic
-    }, []);
+        } else {
+            await createPlaylistEntry(paths, playlist.id).then(() => revalidator.revalidate());
+        }
+    };
 
     if (navigation.state === "loading") {
         return (
@@ -108,23 +91,30 @@ const Playlist: React.FC = () => {
             <div className="h-full flex items-center justify-center flex-col">
                 <p className="text-muted-foreground">No entries in playlist</p>
                 <Button variant="link" onClick={handleAddFileToPlaylist}>
-                    Add file
+                    Add files
                 </Button>
             </div>
         );
     }
 
     return (
-        <ScrollArea className="h-full space-y-1 px-1">
-            {playlist.entries.map((entry) => (
-                <PlaylistItem
-                    key={entry.path}
-                    entry={entry}
-                    isActive={playerInfo.path === entry.path}
-                    onPlay={handlePlayEntry}
-                />
-            ))}
-        </ScrollArea>
+        <ContextMenu>
+            <ContextMenuTrigger asChild>
+                <ScrollArea className="h-full space-y-1 px-1">
+                    {playlist.entries.map((entry) => (
+                        <PlaylistItem
+                            key={entry.path}
+                            entry={entry}
+                            isActive={playerInfo.path === entry.path}
+                            onPlay={handlePlayEntry}
+                        />
+                    ))}
+                </ScrollArea>
+            </ContextMenuTrigger>
+            <ContextMenuContent className="w-32">
+                <ContextMenuItem onClick={handleAddFileToPlaylist}>Add file</ContextMenuItem>
+            </ContextMenuContent>
+        </ContextMenu>
     );
 };
 

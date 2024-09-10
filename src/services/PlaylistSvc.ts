@@ -1,5 +1,5 @@
 import { db } from "@/db/database";
-import { playlist as PlaylistSchema } from "@/db/schema";
+import { playlist as PlaylistTable } from "@/db/schema";
 import { InferQueryModel } from "@/db/types";
 import { count, eq } from "drizzle-orm";
 
@@ -18,13 +18,13 @@ export async function createPlaylist(name = "New Playlist"): Promise<IPlaylist |
     // New playlist will be added at the end of the playlist list.
     const currentNumberOfPlaylists = await db
         .select({ count: count() })
-        .from(PlaylistSchema)
+        .from(PlaylistTable)
         .then((r) => r[0].count);
 
     const playlists = await db
-        .insert(PlaylistSchema)
+        .insert(PlaylistTable)
         .values({ name, index: currentNumberOfPlaylists })
-        .returning({ insertedId: PlaylistSchema.id });
+        .returning({ insertedId: PlaylistTable.id });
     const playlist = playlists.at(0);
 
     if (!playlist) throw new Error("Failed to create playlist");
@@ -49,13 +49,13 @@ export async function getPlaylistById(id: number): Promise<IPlaylist | undefined
 
 export async function updatePlaylistById(
     id: number,
-    newPlaylist: Partial<typeof PlaylistSchema.$inferSelect>
+    newPlaylist: Partial<typeof PlaylistTable.$inferSelect>
 ): Promise<IPlaylist | undefined> {
     const updatedPlaylist = await db
-        .update(PlaylistSchema)
+        .update(PlaylistTable)
         .set(newPlaylist)
-        .where(eq(PlaylistSchema.id, id))
-        .returning({ updatedId: PlaylistSchema.id })
+        .where(eq(PlaylistTable.id, id))
+        .returning({ updatedId: PlaylistTable.id })
         .then((r) => r.at(0));
 
     if (!updatedPlaylist) throw new Error("Failed to edit playlist");
@@ -66,7 +66,7 @@ export async function updatePlaylistById(
 }
 
 export async function deletePlaylistById(id: number): Promise<void> {
-    await db.delete(PlaylistSchema).where(eq(PlaylistSchema.id, id));
+    await db.delete(PlaylistTable).where(eq(PlaylistTable.id, id));
 }
 
 export function getAllPlaylists(): Promise<IPlaylist[]> {
