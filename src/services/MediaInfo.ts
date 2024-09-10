@@ -39,7 +39,7 @@ export async function getMediaInfo(path: string): Promise<MediaMetadata | undefi
     if (mediaInfo) return mediaInfo;
 
     const isVideo = isVideoFileByFileExtension(path);
-    const tauriMetadata = await getMetadataFromFile(path);
+    const tauriMetadata = await getMetadataFromFile(path).catch(() => undefined);
     const altName = await basename(path);
 
     // Video files should use file name instead of media info title.

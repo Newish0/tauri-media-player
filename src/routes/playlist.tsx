@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMpvPlayer } from "@/hooks/use-mpv-player";
-import { cn, isVideoFileByFileExtension } from "@/lib/utils";
+import { cn, isMediaFileByFileExtension, isVideoFileByFileExtension } from "@/lib/utils";
 import MpvPlayer, { MpvEventId } from "@/services/MpvPlayer";
 import { type IPlaylist, getPlaylistById } from "@/services/PlaylistSvc";
 import { createPlaylistEntry } from "@/services/PlaylistEntrySvc";
@@ -16,10 +16,14 @@ import {
     ContextMenuItem,
     ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { dirname } from "@tauri-apps/api/path";
+import { readDir } from "@tauri-apps/api/fs";
+import { getMediaInfo } from "@/services/MediaInfo";
 
 type IPlaylistEntry = IPlaylist["entries"][number];
 
 type LoaderData = {
+    readonly: boolean;
     playlist: { id: "current-folder" | number } & Omit<IPlaylist, "id">; // basically `IPlaylist` but `id` can be "current-folder" or number
 };
 
@@ -27,24 +31,68 @@ export const loader = async ({ params }: { params: { id?: string } }): Promise<L
     const { id } = params;
     if (!id) throw new Error("No playlist id provided");
 
-    if (id == "current-folder")
-        return {
+    if (id == "current-folder") {
+        const loaderData: LoaderData = {
+            readonly: true,
             playlist: { entries: [], id: "current-folder", index: -1, name: "Current Folder" },
         };
+
+        const currentlyPlaying = await MpvPlayer.getPath().catch(() => null);
+        if (currentlyPlaying) {
+            const dirPath = await dirname(currentlyPlaying);
+            const files = await readDir(dirPath);
+            const mediaFiles = files.filter((f) => isMediaFileByFileExtension(f.path));
+            const mediaInfos = await Promise.all(mediaFiles.map((f) => getMediaInfo(f.path)));
+            const entries = mediaInfos.map(
+                (mediaInfo, index) =>
+                    mediaInfo && {
+                        id: -1,
+                        index,
+                        mediaInfo,
+                        path: mediaInfo?.path,
+                        playlistId: -1,
+                    }
+            );
+
+            loaderData.playlist.entries = entries.filter((e) => e) as IPlaylistEntry[];
+        }
+
+        return loaderData;
+    }
 
     const playlist = await getPlaylistById(parseInt(id));
 
     if (!playlist) throw new Error("Playlist not found");
 
-    return { playlist };
+    return { playlist, readonly: false };
 };
 
 const Playlist: React.FC = () => {
-    const { playlist } = useLoaderData() as LoaderData;
+    const { playlist, readonly } = useLoaderData() as LoaderData;
     const { info: playerInfo } = useMpvPlayer();
     const revalidator = useRevalidator();
     const navigate = useNavigate();
     const navigation = useNavigation();
+
+    useEffect(() => {
+        if (playlist.id !== "current-folder") return;
+
+        // Only revalidate if the current playing file is NOT in the current current folder (playlist)
+        const handlePotentialRevalidate = () => {
+            MpvPlayer.getPath().then((path) => {
+                if (playlist.entries.some((e) => e.path === path)) return;
+                revalidator.revalidate();
+            });
+        };
+
+        MpvPlayer.on(MpvEventId.FileLoaded, handlePotentialRevalidate);
+        MpvPlayer.on(MpvEventId.StartFile, handlePotentialRevalidate);
+
+        return () => {
+            MpvPlayer.off(MpvEventId.FileLoaded, handlePotentialRevalidate);
+            MpvPlayer.off(MpvEventId.StartFile, handlePotentialRevalidate);
+        };
+    }, [playlist, revalidator]);
 
     const handlePlayEntry = async (entry: IPlaylistEntry) => {
         const index = playlist.entries.findIndex((e) => e.path === entry.path);
@@ -86,13 +134,19 @@ const Playlist: React.FC = () => {
         );
     }
 
-    if (!playlist.entries.length) {
+    if (!playlist.entries.length && !readonly) {
         return (
             <div className="h-full flex items-center justify-center flex-col">
                 <p className="text-muted-foreground">No entries in playlist</p>
                 <Button variant="link" onClick={handleAddFileToPlaylist}>
                     Add files
                 </Button>
+            </div>
+        );
+    } else if (!playlist.entries.length) {
+        return (
+            <div className="h-full flex items-center justify-center flex-col">
+                <p className="text-muted-foreground">No entries in playlist</p>
             </div>
         );
     }
@@ -112,7 +166,9 @@ const Playlist: React.FC = () => {
                 </ScrollArea>
             </ContextMenuTrigger>
             <ContextMenuContent className="w-32">
-                <ContextMenuItem onClick={handleAddFileToPlaylist}>Add file</ContextMenuItem>
+                <ContextMenuItem onClick={handleAddFileToPlaylist} disabled={readonly}>
+                    Add file
+                </ContextMenuItem>
             </ContextMenuContent>
         </ContextMenu>
     );
