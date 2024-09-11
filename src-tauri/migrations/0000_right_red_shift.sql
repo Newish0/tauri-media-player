@@ -9,12 +9,12 @@ CREATE TABLE `media_info` (
 	`disc` integer,
 	`total_discs` integer,
 	`genre` text,
-	`pictures` text,
 	`duration` integer,
 	`bitrate` integer,
 	`sample_rate` integer,
 	`channels` integer,
-	`bit_depth` integer
+	`bit_depth` integer,
+	`is_video` integer DEFAULT false
 );
 --> statement-breakpoint
 CREATE TABLE `playlist` (
@@ -28,7 +28,5 @@ CREATE TABLE `playlist_entry` (
 	`path` text NOT NULL,
 	`index` integer NOT NULL,
 	`playlist_id` integer NOT NULL,
-	FOREIGN KEY (`playlist_id`) REFERENCES `playlist`(`id`) ON UPDATE no action ON DELETE no action
+	FOREIGN KEY (`playlist_id`) REFERENCES `playlist`(`id`) ON UPDATE no action ON DELETE cascade
 );
---> statement-breakpoint
-DROP TABLE `media_entries`;

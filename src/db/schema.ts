@@ -12,8 +12,10 @@ export const playlistEntry = sqliteTable("playlist_entry", {
     path: text("path").notNull(),
     index: integer("index").notNull(),
     playlistId: integer("playlist_id")
-        .notNull()
-        .references(() => playlist.id),
+        .references(() => playlist.id, {
+            onDelete: "cascade",
+        })
+        .notNull(),
 });
 
 export const mediaInfo = sqliteTable("media_info", {

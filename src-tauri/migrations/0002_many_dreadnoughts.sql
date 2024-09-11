@@ -1,1 +1,0 @@
-ALTER TABLE `media_info` DROP COLUMN `pictures`;
