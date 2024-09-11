@@ -1,24 +1,24 @@
 import { open } from "@tauri-apps/api/dialog";
-import React, { useCallback, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useLoaderData, useNavigate, useNavigation, useRevalidator } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useMpvPlayer } from "@/hooks/use-mpv-player";
-import { cn, isMediaFileByFileExtension, isVideoFileByFileExtension } from "@/lib/utils";
-import MpvPlayer, { MpvEventId } from "@/services/MpvPlayer";
-import { type IPlaylist, getPlaylistById } from "@/services/PlaylistSvc";
-import { createPlaylistEntry } from "@/services/PlaylistEntrySvc";
 import {
     ContextMenu,
     ContextMenuContent,
     ContextMenuItem,
     ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { dirname } from "@tauri-apps/api/path";
-import { readDir } from "@tauri-apps/api/fs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useMpvPlayer } from "@/hooks/use-mpv-player";
+import { cn, isMediaFileByFileExtension, isVideoFileByFileExtension } from "@/lib/utils";
 import { getMediaInfo } from "@/services/MediaInfo";
+import MpvPlayer, { MpvEventId } from "@/services/MpvPlayer";
+import { createPlaylistEntry, deletePlaylistEntryById } from "@/services/PlaylistEntrySvc";
+import { type IPlaylist, getPlaylistById } from "@/services/PlaylistSvc";
+import { readDir } from "@tauri-apps/api/fs";
+import { dirname } from "@tauri-apps/api/path";
 
 type IPlaylistEntry = IPlaylist["entries"][number];
 
@@ -97,8 +97,6 @@ const Playlist: React.FC = () => {
     const handlePlayEntry = async (entry: IPlaylistEntry) => {
         const index = playlist.entries.findIndex((e) => e.path === entry.path);
 
-        console.log("PLAY ENTRY", entry, index);
-
         await MpvPlayer.setPlaylistFromPaths(playlist.entries.map((e) => e.path));
 
         await MpvPlayer.setPlaylistPos(index + 1); // TODO: investigate regarding the 1's indexing
@@ -122,6 +120,10 @@ const Playlist: React.FC = () => {
         } else {
             await createPlaylistEntry(paths, playlist.id).then(() => revalidator.revalidate());
         }
+    };
+
+    const handleDeletePlaylistEntry = async (entry: IPlaylistEntry) => {
+        await deletePlaylistEntryById(entry.id).then(() => revalidator.revalidate());
     };
 
     if (navigation.state === "loading") {
@@ -156,13 +158,29 @@ const Playlist: React.FC = () => {
             <ContextMenuTrigger asChild>
                 <ScrollArea className="h-full space-y-1 px-1">
                     {playlist.entries.map((entry) => (
-                        <PlaylistItem
-                            key={entry.path}
-                            entry={entry}
-                            isActive={playerInfo.path === entry.path}
-                            onPlay={handlePlayEntry}
-                        />
+                        <ContextMenu key={entry.path}>
+                            <ContextMenuTrigger>
+                                <PlaylistItem
+                                    entry={entry}
+                                    isActive={playerInfo.path === entry.path}
+                                    onPlay={handlePlayEntry}
+                                />
+                            </ContextMenuTrigger>
+                            <ContextMenuContent className="w-32">
+                                <ContextMenuItem onClick={() => handlePlayEntry(entry)}>
+                                    Play
+                                </ContextMenuItem>
+                                <ContextMenuItem
+                                    onClick={() => handleDeletePlaylistEntry(entry)}
+                                    disabled={readonly}
+                                >
+                                    Delete
+                                </ContextMenuItem>
+                            </ContextMenuContent>
+                        </ContextMenu>
                     ))}
+
+                    <div className="h-[20vh]"></div>
                 </ScrollArea>
             </ContextMenuTrigger>
             <ContextMenuContent className="w-32">

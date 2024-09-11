@@ -1,6 +1,6 @@
 import { db } from "@/db/database";
 import { InferQueryModel } from "@/db/types";
-import { count } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import { playlistEntry as PlaylistEntryTable } from "@/db/schema";
 import { getMediaInfo } from "./MediaInfo";
 
@@ -50,4 +50,27 @@ export async function createPlaylistEntry(
     // Get playlist again since returning can't populate relations fields
     const { insertedId } = playlistEntry;
     return getPlaylistEntryById(insertedId);
+}
+
+export async function deletePlaylistEntryById(id: number): Promise<void> {
+    await db.delete(PlaylistEntryTable).where(eq(PlaylistEntryTable.id, id));
+}
+
+export async function updatePlaylistEntryIndex(
+    id: number,
+    index: number
+): Promise<IPlaylistEntry | undefined> {
+    const updatedPlaylistEntries = await db
+        .update(PlaylistEntryTable)
+        .set({ index })
+        .where(eq(PlaylistEntryTable.id, id))
+        .returning({ updatedId: PlaylistEntryTable.id });
+
+    const updatedPlaylistEntry = updatedPlaylistEntries.at(0);
+
+    if (!updatedPlaylistEntry) throw new Error("Failed to edit playlist entry.");
+
+    // Get playlist again since returning can't populate relations fields
+    const { updatedId } = updatedPlaylistEntry;
+    return getPlaylistEntryById(updatedId);
 }
