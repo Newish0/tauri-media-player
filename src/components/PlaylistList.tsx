@@ -13,15 +13,19 @@ import {
     ContextMenuTrigger,
 } from "./ui/context-menu";
 import { ScrollArea } from "./ui/scroll-area";
+import { useNavigate } from "react-router-dom";
 
 const PlaylistList: React.FC<{ playlists: IPlaylist[] }> = ({ playlists: defaultPlaylists }) => {
     const [playlists, setPlaylists] = React.useState(defaultPlaylists);
+    const navigate = useNavigate();
 
     const handleNewPlaylist = useCallback(() => {
         createPlaylist().then((newPlaylist) => {
             if (!newPlaylist) return console.error("Failed to create new playlist"); // TODO: show error
 
             setPlaylists((playlists) => [...playlists, newPlaylist]); // assume new playlist is added at the end
+
+            navigate(`/app/playlists/${newPlaylist.id}`); // navigate to new playlist
         });
     }, [playlists, setPlaylists]);
 
@@ -46,6 +50,8 @@ const PlaylistList: React.FC<{ playlists: IPlaylist[] }> = ({ playlists: default
             deletePlaylistById(parseInt(id.toString()))
                 .then(() => {
                     setPlaylists((playlists) => playlists.filter((p) => p.id !== id));
+
+                    // TODO: if currently viewing this playlist, nav user out of it
                 })
                 .catch(console.error); // TODO: show error
         },

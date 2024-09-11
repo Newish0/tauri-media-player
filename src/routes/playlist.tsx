@@ -179,17 +179,21 @@ const Playlist: React.FC = () => {
 
     return (
         <PlaylistContainerContextMenu handleAddFile={handleAddFileToPlaylist}>
-            <ScrollArea className="h-full space-y-1 px-1">
-                {playlist.entries.map((entry) => (
-                    <PlaylistItem
-                        key={entry.path}
-                        entry={entry}
-                        isActive={playerInfo.path === entry.path}
-                        onPlay={handlePlayEntry}
-                        onDelete={handleDeletePlaylistEntry}
-                        readonly={readonly}
-                    />
-                ))}
+            <ScrollArea className="h-full px-1">
+                <div className="space-y-1">
+                    {playlist.entries.map((entry) => (
+                        <PlaylistItem
+                            key={entry.path}
+                            entry={entry}
+                            isActive={playerInfo.path === entry.path}
+                            onPlay={handlePlayEntry}
+                            onDelete={handleDeletePlaylistEntry}
+                            readonly={readonly}
+                        />
+                    ))}
+                </div>
+
+                {/* Bottom spacer to allow more room for the context menu */}
                 <div className="h-[20vh]"></div>
             </ScrollArea>
         </PlaylistContainerContextMenu>
