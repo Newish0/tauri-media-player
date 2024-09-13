@@ -37,15 +37,15 @@ export async function createPlaylistEntry(
         .from(PlaylistEntryTable)
         .then((r) => r[0].count);
 
+    // Make sure we have also generated mediaInfo before creating entry
+    await getMediaInfo(path);
+
     const playlistEntries = await db
         .insert(PlaylistEntryTable)
         .values({ path, playlistId, index: currentNumberOfPlaylistEntries })
         .returning({ insertedId: PlaylistEntryTable.id });
     const playlistEntry = playlistEntries.at(0);
     if (!playlistEntry) throw new Error("Failed to create playlist entry.");
-
-    // Make sure we have also generated mediaInfo
-    await getMediaInfo(path);
 
     // Get playlist again since returning can't populate relations fields
     const { insertedId } = playlistEntry;
