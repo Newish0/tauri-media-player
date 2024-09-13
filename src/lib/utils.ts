@@ -1,6 +1,8 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import mime from "mime";
+import { FileEntry, readDir } from "@tauri-apps/api/fs";
+import {} from "@tauri-apps/api/path";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -132,4 +134,22 @@ export function isExtensionOfType(extension: string, mimeTypes: string[]): boole
 
     // Check if the type is one of the mime types
     return mimeTypes.includes(type);
+}
+
+export async function getAllFilesInDirectory(dirPath: string): Promise<string[]> {
+    const files: string[] = [];
+    const items = await readDir(dirPath, { recursive: true });
+
+    function processEntries(entries: FileEntry[]) {
+        for (const entry of entries) {
+            if (entry.children) {
+                processEntries(entry.children);
+            } else {
+                files.push(entry.path);
+            }
+        }
+    }
+
+    processEntries(items);
+    return files;
 }
