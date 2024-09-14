@@ -142,6 +142,12 @@ pub fn mpv_pause() -> Result<(), MpvError> {
 }
 
 #[tauri::command]
+pub fn mpv_stop() -> Result<(), MpvError> {
+    let player = MPV_PLAYER.lock().unwrap();
+    player.stop()
+}
+
+#[tauri::command]
 pub fn mpv_load_file(path: &str) -> Result<(), MpvError> {
     let player = MPV_PLAYER.lock().unwrap();
     player.load_file(path)

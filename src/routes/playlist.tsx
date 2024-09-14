@@ -118,8 +118,8 @@ const Playlist: React.FC = () => {
      */
     const handlePlayEntry = async (entry: IPlaylistEntry) => {
         const index = playlist.entries.findIndex((e) => e.path === entry.path);
-        await MpvPlayer.setPlaylistFromPaths(playlist.entries.map((e) => e.path));
-        await MpvPlayer.setPlaylistPos(index + 1);
+        await MpvPlayer.setPlaylist(playlist);
+        await MpvPlayer.setPlaylistPos(index);
 
         if (isVideoFileByFileExtension(entry.path)) {
             navigate("/focused-player");

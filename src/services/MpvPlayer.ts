@@ -1,6 +1,7 @@
 import { objectKeysToCamelCase } from "@/lib/utils";
 import { invoke } from "@tauri-apps/api";
 import { listen, type Event } from "@tauri-apps/api/event";
+import { IPlaylist } from "./PlaylistSvc";
 
 export enum MpvEventId {
     None = 0,
@@ -164,6 +165,10 @@ export default class MpvPlayer {
         await invoke("mpv_pause");
     }
 
+    public static async stop() {
+        await invoke("mpv_stop");
+    }
+
     public static async getTracks(): Promise<Track[]> {
         const rustTracks: any[] = await invoke("mpv_get_tracks");
         return rustTracks.map(objectKeysToCamelCase) as Track[];
@@ -193,44 +198,85 @@ export default class MpvPlayer {
         });
     }
 
-    public static async setPlaylistFromPaths(paths: string[], replace = true) {
-        if (replace) await MpvPlayer.clearPlaylist();
+    /*
+     * Playlist are managed by the TS MpvPlayer class.
+     * In theory, if MPV backend is not controlled by any other
+     * service, the MpvPlayer class's playlist state should be kept in sync.
+     */
+
+    private static playlist: (Omit<IPlaylist, "id"> & { id: any }) | null = null;
+
+    public static async setPlaylist(playlist: Omit<IPlaylist, "id"> & { id: any }) {
+        MpvPlayer.playlist = playlist;
+        await MpvPlayer._setPlaylistFromPaths(
+            MpvPlayer.playlist.entries.map((e) => e.path),
+            true
+        );
+    }
+
+    public static async getPlaylist() {
+        return MpvPlayer.playlist;
+    }
+
+    public static async getPlaylistPos() {
+        if (!MpvPlayer.playlist) throw new Error("No playlist loaded");
+        return await MpvPlayer._getPlaylistPos();
+    }
+
+    public static async setPlaylistPos(pos: number) {
+        if (!MpvPlayer.playlist) throw new Error("No playlist loaded");
+        await MpvPlayer._setPlaylistPos(pos);
+    }
+
+    public static async playlistNext() {
+        if (!MpvPlayer.playlist) throw new Error("No playlist loaded");
+        const curPos = await MpvPlayer._getPlaylistPos();
+        const n = MpvPlayer.playlist.entries.length;
+        const nextPos = (curPos + 1) % n;
+        await MpvPlayer._setPlaylistPos(nextPos);
+    }
+
+    public static async playlistPrev() {
+        if (!MpvPlayer.playlist) throw new Error("No playlist loaded");
+        const curPos = await MpvPlayer._getPlaylistPos();
+        const n = MpvPlayer.playlist.entries.length;
+        const prevPos = (curPos - 1 + n) % n;
+        await MpvPlayer._setPlaylistPos(prevPos);
+    }
+
+    private static async _setPlaylistFromPaths(paths: string[], replace = true) {
+        if (replace) {
+            await MpvPlayer.stop();
+            await MpvPlayer._clearPlaylist();
+        }
 
         return await invoke("mpv_set_playlist_from_paths", {
             paths,
         });
     }
 
-    public static async clearPlaylist() {
+    private static async _clearPlaylist() {
         return await invoke("mpv_clear_playlist");
     }
 
-    public static async playlistNext() {
+    private static async _playlistNext() {
         return await invoke("mpv_playlist_next");
     }
 
-    public static async playlistPrev() {
+    private static async _playlistPrev() {
         return await invoke("mpv_playlist_prev");
     }
 
-    public static async getPlaylist() {
+    private static async _getPlaylist() {
         const playlist: any[] = await invoke("mpv_get_playlist");
         return playlist.map(objectKeysToCamelCase) as PlaylistEntry[];
     }
 
-    public static async getPlaylistPos(): Promise<number> {
+    private static async _getPlaylistPos(): Promise<number> {
         return await invoke("mpv_get_playlist_pos");
     }
 
-    /**
-     * Set playlist position from 1 to N.
-     *
-     * VERY IMPORTANT: 1 is the first item in the playlist.
-     *
-     * @param pos in ones index
-     * @returns
-     */
-    public static async setPlaylistPos(pos: number) {
+    private static async _setPlaylistPos(pos: number) {
         return await invoke("mpv_set_playlist_pos", {
             pos,
         });

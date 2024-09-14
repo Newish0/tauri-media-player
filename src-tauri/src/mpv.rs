@@ -505,6 +505,10 @@ impl MpvPlayer {
             .command_string(&format!("seek {} absolute", position))
     }
 
+    pub fn stop(&self) -> Result<(), MpvError> {
+        self.mpv.command_string("stop")
+    }
+
     // BEYOND THIS IS UNTESTED
 
     pub fn get_position(&self) -> Result<f64, MpvError> {
