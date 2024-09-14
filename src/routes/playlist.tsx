@@ -185,7 +185,10 @@ const Playlist: React.FC = () => {
                         <PlaylistItem
                             key={entry.path}
                             entry={entry}
-                            isActive={playerInfo.path === entry.path}
+                            isActive={
+                                MpvPlayer.getPlaylist()?.id === playlist.id &&
+                                playerInfo.path === entry.path
+                            }
                             onPlay={handlePlayEntry}
                             onDelete={handleDeletePlaylistEntry}
                             readonly={readonly}

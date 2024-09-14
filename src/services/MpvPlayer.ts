@@ -214,7 +214,7 @@ export default class MpvPlayer {
         );
     }
 
-    public static async getPlaylist() {
+    public static getPlaylist() {
         return MpvPlayer.playlist;
     }
 
