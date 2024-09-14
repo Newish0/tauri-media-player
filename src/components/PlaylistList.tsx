@@ -1,10 +1,15 @@
+import { getAllFilesInDirectory, isMediaFileByFileExtension } from "@/lib/utils";
+import { createPlaylistEntry } from "@/services/PlaylistEntrySvc";
 import {
     createPlaylist,
     deletePlaylistById,
     updatePlaylistById,
     type IPlaylist,
 } from "@/services/PlaylistSvc";
+import { open } from "@tauri-apps/api/dialog";
+import { basename } from "@tauri-apps/api/path";
 import React, { useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import PlaylistListItem from "./PlaylistListItem";
 import {
     ContextMenu,
@@ -13,11 +18,6 @@ import {
     ContextMenuTrigger,
 } from "./ui/context-menu";
 import { ScrollArea } from "./ui/scroll-area";
-import { useNavigate } from "react-router-dom";
-import { open } from "@tauri-apps/api/dialog";
-import { getAllFilesInDirectory, isMediaFileByFileExtension } from "@/lib/utils";
-import { basename, dirname } from "@tauri-apps/api/path";
-import { createPlaylistEntry } from "@/services/PlaylistEntrySvc";
 
 const PlaylistList: React.FC<{ playlists: IPlaylist[] }> = ({ playlists: defaultPlaylists }) => {
     const [playlists, setPlaylists] = React.useState(defaultPlaylists);
@@ -77,13 +77,16 @@ const PlaylistList: React.FC<{ playlists: IPlaylist[] }> = ({ playlists: default
 
         const folderName = await basename(folder);
 
-        const newPlaylist = await createPlaylist().then((newPlaylist) => newPlaylist && updatePlaylistById(newPlaylist.id, { name: folderName }));
+        const newPlaylist = await createPlaylist().then(
+            (newPlaylist) => newPlaylist && updatePlaylistById(newPlaylist.id, { name: folderName })
+        );
         if (!newPlaylist) return console.error("Failed to create new playlist"); // TODO: show error
         setPlaylists((playlists) => [...playlists, newPlaylist]);
 
-        await Promise.all(mediaFiles.map(async (file) => createPlaylistEntry(file, newPlaylist.id)));
+        await Promise.all(
+            mediaFiles.map(async (file) => createPlaylistEntry(file, newPlaylist.id))
+        );
         navigate(`/app/playlists/${newPlaylist.id}`);
-
     }, [playlists, setPlaylists]);
 
     return (
