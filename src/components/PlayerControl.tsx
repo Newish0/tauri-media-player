@@ -8,6 +8,7 @@ import {
     ExitFullScreenIcon,
     PauseIcon,
     PlayIcon,
+    StopIcon,
     SpeakerLoudIcon,
     SpeakerModerateIcon,
     SpeakerOffIcon,
@@ -54,6 +55,10 @@ const PlayerControl: React.FC = () => {
         }
     };
 
+    const handleStop = () => {
+        MpvPlayer.stop();
+    };
+
     const toggleFullScreen = async () => {
         setIsFullScreen(!isFullScreen);
     };
@@ -95,6 +100,14 @@ const PlayerControl: React.FC = () => {
                         disabled={!playerInfo.path}
                     >
                         {playerInfo.isPaused ? <PlayIcon></PlayIcon> : <PauseIcon></PauseIcon>}
+                    </Button>
+                    <Button
+                        size={"icon"}
+                        variant={"ghost"}
+                        onClick={handleStop}
+                        disabled={!playerInfo.path}
+                    >
+                        <StopIcon />
                     </Button>
 
                     <Button
