@@ -83,9 +83,11 @@ const PlaylistList: React.FC<{ playlists: IPlaylist[] }> = ({ playlists: default
         if (!newPlaylist) return console.error("Failed to create new playlist"); // TODO: show error
         setPlaylists((playlists) => [...playlists, newPlaylist]);
 
-        await Promise.all(
-            mediaFiles.map(async (file) => createPlaylistEntry(file, newPlaylist.id))
-        );
+        for (const file of mediaFiles) {
+            // DO NOT RUN THIS CONCURRENTLY to avoid invalid index/pos.
+            await createPlaylistEntry(file, newPlaylist.id);
+        }
+
         navigate(`/app/playlists/${newPlaylist.id}`);
     }, [playlists, setPlaylists]);
 

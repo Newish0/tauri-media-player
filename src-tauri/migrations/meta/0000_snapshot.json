@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "2a374cdb-25dc-477a-9407-020eb212763a",
+  "id": "0f6a0ed6-b957-422c-8620-122ef570a0ac",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "media_info": {
@@ -175,6 +175,13 @@
         },
         "index": {
           "name": "index",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sort_index": {
+          "name": "sort_index",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,

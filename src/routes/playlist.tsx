@@ -138,9 +138,10 @@ const Playlist: React.FC = () => {
             return;
         } else {
             const addPaths = Array.isArray(paths) ? paths : [paths];
-            await Promise.all(
-                addPaths.map((path) => createPlaylistEntry(path, playlist.id as number))
-            );
+            for (const path of addPaths) {
+                // DO NOT RUN THIS CONCURRENTLY to avoid invalid index/pos.
+                await createPlaylistEntry(path, playlist.id as number);
+            }
             revalidator.revalidate();
         }
     };

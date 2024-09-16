@@ -4,6 +4,8 @@ import { count, eq } from "drizzle-orm";
 import { playlistEntry as PlaylistEntryTable } from "@/db/schema";
 import { getMediaInfo } from "./MediaInfo";
 
+// TODO: Need to use transaction for func that calls multiple queries
+
 export type IPlaylistEntry = InferQueryModel<
     "playlistEntry",
     {
@@ -35,6 +37,7 @@ export async function createPlaylistEntry(
     const currentNumberOfPlaylistEntries = await db
         .select({ count: count() })
         .from(PlaylistEntryTable)
+        .where(eq(PlaylistEntryTable.playlistId, playlistId))
         .then((r) => r[0].count);
 
     // Make sure we have also generated mediaInfo before creating entry
@@ -42,7 +45,12 @@ export async function createPlaylistEntry(
 
     const playlistEntries = await db
         .insert(PlaylistEntryTable)
-        .values({ path, playlistId, index: currentNumberOfPlaylistEntries })
+        .values({
+            path,
+            playlistId,
+            index: currentNumberOfPlaylistEntries,
+            sortIndex: currentNumberOfPlaylistEntries,
+        })
         .returning({ insertedId: PlaylistEntryTable.id });
     const playlistEntry = playlistEntries.at(0);
     if (!playlistEntry) throw new Error("Failed to create playlist entry.");

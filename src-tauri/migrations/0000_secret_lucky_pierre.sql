@@ -27,6 +27,7 @@ CREATE TABLE `playlist_entry` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`path` text NOT NULL,
 	`index` integer NOT NULL,
+	`sort_index` integer NOT NULL,
 	`playlist_id` integer NOT NULL,
 	FOREIGN KEY (`playlist_id`) REFERENCES `playlist`(`id`) ON UPDATE no action ON DELETE cascade
 );
