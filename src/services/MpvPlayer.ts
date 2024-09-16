@@ -208,8 +208,11 @@ export default class MpvPlayer {
 
     public static async setPlaylist(playlist: Omit<IPlaylist, "id"> & { id: any }) {
         MpvPlayer.playlist = playlist;
+
+        const sortedEntries = MpvPlayer.playlist.entries.toSorted((a, b) => a.index - b.index);
+
         await MpvPlayer._setPlaylistFromPaths(
-            MpvPlayer.playlist.entries.map((e) => e.path),
+            sortedEntries.map((e) => e.path),
             true
         );
     }

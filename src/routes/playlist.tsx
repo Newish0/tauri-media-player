@@ -117,7 +117,7 @@ const Playlist: React.FC = () => {
      * @param entry - The playlist entry to play.
      */
     const handlePlayEntry = async (entry: IPlaylistEntry) => {
-        const index = playlist.entries.findIndex((e) => e.path === entry.path);
+        const index = entry.index;
         await MpvPlayer.setPlaylist(playlist);
         await MpvPlayer.setPlaylistPos(index);
 
