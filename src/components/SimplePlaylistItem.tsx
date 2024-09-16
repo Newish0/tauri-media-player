@@ -1,5 +1,5 @@
 /**
- * PlaylistItem Component
+ * SimplePlaylistItem Component
  *
  * Not to be confused with PlaylistListItem...
  *
@@ -15,13 +15,13 @@ import {
     ContextMenuItem,
     ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { cn } from "@/lib/utils";
+import { cn, formatSeconds } from "@/lib/utils";
 import { IPlaylistEntry } from "@/services/PlaylistEntrySvc";
 
 /**
  * Props for the PlaylistItem component.
  */
-interface PlaylistItemProps {
+interface SimplePlaylistItemProps {
     entry: IPlaylistEntry;
     isActive: boolean;
     onPlay: (entry: IPlaylistEntry) => void;
@@ -32,19 +32,23 @@ interface PlaylistItemProps {
 /**
  * Component representing a single item in the playlist.
  */
-const PlaylistItem: React.FC<PlaylistItemProps> = React.memo(
+const SimplePlaylistItem: React.FC<SimplePlaylistItemProps> = React.memo(
     ({ entry, isActive, onPlay, onDelete, readonly }) => (
         <ContextMenu>
             <ContextMenuTrigger asChild>
                 <div
                     onDoubleClick={() => onPlay(entry)}
                     className={cn(
-                        "block px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                        "flex justify-between items-center px-3 py-2 rounded-md transition-colors",
                         "hover:bg-accent hover:text-accent-foreground",
                         isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
                     )}
                 >
-                    {entry.mediaInfo.title}
+                    <div className="text-sm font-medium">{entry.mediaInfo.title}</div>
+
+                    {entry.mediaInfo.duration ? (
+                        <div className="text-xs">{formatSeconds(entry.mediaInfo.duration)}</div>
+                    ) : null}
                 </div>
             </ContextMenuTrigger>
             <ContextMenuContent className="w-32">
@@ -57,6 +61,6 @@ const PlaylistItem: React.FC<PlaylistItemProps> = React.memo(
     )
 );
 
-PlaylistItem.displayName = "PlaylistItem";
+SimplePlaylistItem.displayName = "PlaylistItem";
 
-export default PlaylistItem;
+export default SimplePlaylistItem;

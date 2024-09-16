@@ -12,7 +12,7 @@ import React, { useEffect } from "react";
 import { useLoaderData, useNavigate, useNavigation, useRevalidator } from "react-router-dom";
 
 import PlaylistContainerContextMenu from "@/components/PlaylistContainerContextMenu";
-import PlaylistItem from "@/components/PlaylistItem";
+import SimplePlaylistItem from "@/components/SimplePlaylistItem";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -183,7 +183,7 @@ const Playlist: React.FC = () => {
             <ScrollArea className="h-full px-1">
                 <div className="space-y-1">
                     {playlist.entries.map((entry) => (
-                        <PlaylistItem
+                        <SimplePlaylistItem
                             key={entry.path}
                             entry={entry}
                             isActive={
