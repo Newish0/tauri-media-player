@@ -10,9 +10,8 @@ type LoaderData = {
 };
 
 export const loader = async (): Promise<LoaderData> => {
-    console.log("Loading app...");
+    console.log("[AppLoader] Loading app...");
     const playlists = await getAllPlaylists();
-    console.log(playlists);
     return { playlists };
 };
 

@@ -20,10 +20,17 @@ import { useMpvPlayer } from "@/hooks/use-mpv-player";
 import { isMediaFileByFileExtension, isVideoFileByFileExtension } from "@/lib/utils";
 import { getMediaInfo } from "@/services/MediaInfo";
 import MpvPlayer, { MpvEventId } from "@/services/MpvPlayer";
-import { createPlaylistEntry, deletePlaylistEntryById } from "@/services/PlaylistEntrySvc";
+import {
+    createPlaylistEntry,
+    deletePlaylistEntryById,
+    updatePlaylistEntrySortIndex,
+} from "@/services/PlaylistEntrySvc";
 import { type IPlaylist, getPlaylistById } from "@/services/PlaylistSvc";
 import { readDir } from "@tauri-apps/api/fs";
 import { dirname } from "@tauri-apps/api/path";
+import DraggableSimplePlaylist from "@/components/DraggableSimplePlaylist";
+import { arrayMove } from "@dnd-kit/sortable";
+import { DragEndEvent } from "@dnd-kit/core";
 
 type IPlaylistEntry = IPlaylist["entries"][number];
 
@@ -56,7 +63,14 @@ const loadCurrentFolderData = async (): Promise<LoaderData> => {
         loaderData.playlist.entries = mediaInfos
             .map((mediaInfo, index) =>
                 mediaInfo
-                    ? { id: -1, index, mediaInfo, path: mediaInfo.path, playlistId: -1 }
+                    ? {
+                          id: -index,
+                          index,
+                          sortIndex: index,
+                          mediaInfo,
+                          path: mediaInfo.path,
+                          playlistId: -1,
+                      }
                     : null
             )
             .filter(Boolean) as IPlaylistEntry[];
@@ -74,6 +88,8 @@ const loadCurrentFolderData = async (): Promise<LoaderData> => {
 export const loader = async ({ params }: { params: { id?: string } }): Promise<LoaderData> => {
     const { id } = params;
     if (!id) throw new Error("No playlist id provided");
+
+    console.log("[PlaylistLoader] Loading playlist", id);
 
     return id === "current-folder"
         ? loadCurrentFolderData()
@@ -155,6 +171,22 @@ const Playlist: React.FC = () => {
         revalidator.revalidate();
     };
 
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (over && active.id !== over.id) {
+            const srcEntryIndex = playlist.entries.findIndex((e) => e.id === active.id);
+            const destEntryIndex = playlist.entries.findIndex((e) => e.id === over.id);
+            const srcEntry = playlist.entries[srcEntryIndex];
+            const destEntry = playlist.entries[destEntryIndex];
+
+            if (!srcEntry || !destEntry) return;
+            arrayMove(playlist.entries, srcEntryIndex, destEntryIndex); // optimistic update
+            await updatePlaylistEntrySortIndex(srcEntry.id, destEntry.sortIndex);
+            await updatePlaylistEntrySortIndex(destEntry.id, srcEntry.sortIndex);
+            revalidator.revalidate();
+        }
+    };
+
     if (navigation.state === "loading") {
         return (
             <div className="h-full space-y-1 p-1">
@@ -181,21 +213,28 @@ const Playlist: React.FC = () => {
     return (
         <PlaylistContainerContextMenu handleAddFile={handleAddFileToPlaylist}>
             <ScrollArea className="h-full px-1">
-                <div className="space-y-1">
-                    {playlist.entries.map((entry) => (
-                        <SimplePlaylistItem
-                            key={entry.path}
-                            entry={entry}
-                            isActive={
-                                MpvPlayer.getPlaylist()?.id === playlist.id &&
-                                playerInfo.path === entry.path
-                            }
-                            onPlay={handlePlayEntry}
-                            onDelete={handleDeletePlaylistEntry}
-                            readonly={readonly}
-                        />
-                    ))}
-                </div>
+                <DraggableSimplePlaylist
+                    disabled={readonly}
+                    onDragEnd={handleDragEnd}
+                    items={playlist.entries
+                        .toSorted((a, b) => a.sortIndex - b.sortIndex)
+                        .map((e) => ({
+                            id: e.id,
+                            element: (
+                                <SimplePlaylistItem
+                                    key={e.path}
+                                    entry={e}
+                                    isActive={
+                                        MpvPlayer.getPlaylist()?.id === playlist.id &&
+                                        playerInfo.path === e.path
+                                    }
+                                    onPlay={handlePlayEntry}
+                                    onDelete={handleDeletePlaylistEntry}
+                                    readonly={readonly}
+                                />
+                            ),
+                        }))}
+                ></DraggableSimplePlaylist>
 
                 {/* Bottom spacer to allow more room for the context menu */}
                 <div className="h-[20vh]"></div>

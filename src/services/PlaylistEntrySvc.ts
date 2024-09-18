@@ -64,13 +64,13 @@ export async function deletePlaylistEntryById(id: number): Promise<void> {
     await db.delete(PlaylistEntryTable).where(eq(PlaylistEntryTable.id, id));
 }
 
-export async function updatePlaylistEntryIndex(
+export async function updatePlaylistEntrySortIndex(
     id: number,
-    index: number
+    sortIndex: number
 ): Promise<IPlaylistEntry | undefined> {
     const updatedPlaylistEntries = await db
         .update(PlaylistEntryTable)
-        .set({ index })
+        .set({ sortIndex })
         .where(eq(PlaylistEntryTable.id, id))
         .returning({ updatedId: PlaylistEntryTable.id });
 

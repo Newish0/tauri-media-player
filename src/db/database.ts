@@ -43,15 +43,15 @@ class TauriSQLiteAdapter {
             throw error;
         }
 
-        console.log("sql", sql);
+        // console.log("sql", sql);
 
-        console.log("query result", result);
+        // console.log("query result", result);
 
         // When the method is get, you should return a value as {rows: string[]}.
         // Otherwise, you should return {rows: string[][]}.
         const finalResult = method === "get" ? result[0] : result;
 
-        console.log("finalResult", finalResult);
+        // console.log("finalResult", finalResult);
 
         return { rows: finalResult };
     }
@@ -62,5 +62,5 @@ const adapter = await TauriSQLiteAdapter.create(dbPath);
 
 export const db = drizzle(
     (sql: string, params: unknown[], method: string) => adapter.query(sql, params, method),
-    { schema, logger: true }
+    { schema, logger: false }
 );

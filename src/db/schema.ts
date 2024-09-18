@@ -11,7 +11,10 @@ export const playlistEntry = sqliteTable("playlist_entry", {
     id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
     path: text("path").notNull(),
 
-    /* The position in the playlist; used for targeting which entry to play */
+    /*
+     * The position in the playlist; used for targeting which entry to play
+     * WARNING: this field should be immutable.
+     */
     index: integer("index").notNull(),
 
     /* The position of entry to be displayed in the playlist depending on the sorting */

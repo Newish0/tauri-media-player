@@ -114,6 +114,9 @@ const PlaylistList: React.FC<{ playlists: IPlaylist[] }> = ({ playlists: default
                         />
                     ))}
                 </ul>
+
+                {/* Bottom spacer to allow more room for the context menu */}
+                <div className="h-[20vh]"></div>
             </ScrollArea>
         </PlaylistListContextMenu>
     );
