@@ -29,6 +29,8 @@ type MpvEvent = Event<{
 
 type MpvEventCallback = (event: MpvEvent) => void;
 
+type Playlist = Omit<IPlaylist, "id"> & { id: any };
+
 export interface Track {
     id: number;
     type: string; // `type` is not a reserved word in TypeScript, so no need to rename
@@ -81,6 +83,16 @@ export type PlaylistEntry = {
     title?: string;
     id?: number;
 };
+
+type LoadMode =
+    | "Replace"
+    | "Append"
+    | "AppendPlay"
+    | "InsertNext"
+    | "InsertNextPlay"
+    | { InsertAt: number }
+    | { InsertAtPlay: number };
+
 export default class MpvPlayer {
     private static eventListeners = new Map<MpvEventId, Set<MpvEventCallback>>();
 
@@ -139,10 +151,17 @@ export default class MpvPlayer {
         });
     }
 
-    public static async loadFile(filePath: string) {
-        return await invoke("mpv_load_file", {
+    public static async loadFile(filePath: string, mode?: LoadMode) {
+        await invoke("mpv_load_file", {
             path: filePath,
+            mode,
+        } as {
+            path: string;
+            mode?: LoadMode;
         });
+
+        console.log("LOAD FILE", filePath, mode);
+        console.log(await MpvPlayer._getPlaylist());
     }
 
     public static async getPath(): Promise<string> {
@@ -204,12 +223,14 @@ export default class MpvPlayer {
      * service, the MpvPlayer class's playlist state should be kept in sync.
      */
 
-    private static playlist: (Omit<IPlaylist, "id"> & { id: any }) | null = null;
+    private static playlist: Playlist | null = null;
 
-    public static async setPlaylist(playlist: Omit<IPlaylist, "id"> & { id: any }) {
-        MpvPlayer.playlist = playlist;
+    public static async setPlaylist(playlist: Playlist) {
+        MpvPlayer.playlist = JSON.parse(JSON.stringify(playlist)) as Playlist; // deep copy
 
-        const sortedEntries = MpvPlayer.playlist.entries.toSorted((a, b) => a.index - b.index);
+        const sortedEntries = MpvPlayer.playlist.entries.toSorted(
+            (a, b) => a.sortIndex - b.sortIndex
+        );
 
         await MpvPlayer._setPlaylistFromPaths(
             sortedEntries.map((e) => e.path),
@@ -221,6 +242,55 @@ export default class MpvPlayer {
         return MpvPlayer.playlist;
     }
 
+    public static async updatePlaylist(updatedPlaylist: Playlist) {
+        if (!MpvPlayer.playlist || MpvPlayer.playlist?.id !== updatedPlaylist.id) {
+            throw new Error("Cannot update playlist if it is the currently loaded playlist");
+        }
+
+        const sortedEntries = updatedPlaylist.entries.toSorted((a, b) => a.sortIndex - b.sortIndex);
+
+        const currentlyPlayingOldSortIndex = await MpvPlayer.getPlaylistPos();
+        const currentlyPlayingOldEntry = MpvPlayer.playlist.entries.find(
+            (e) => e.sortIndex === currentlyPlayingOldSortIndex
+        );
+
+        const currentlyPlayingNewEntry = sortedEntries.find(
+            (e) => e.index === currentlyPlayingOldEntry?.index
+        );
+
+        if (!currentlyPlayingNewEntry) {
+            throw new Error(
+                "An entry was deleted from the playlist while it was playing. Need to re-set playlist on deletion."
+            );
+        }
+
+        console.log("[updatePlaylist] Currently Playing:", currentlyPlayingNewEntry);
+
+        const currentlyPlayingNewSortIndex = currentlyPlayingNewEntry?.sortIndex;
+
+        const infrontCurrentlyPlaying = sortedEntries.filter(
+            (e) => e.sortIndex < currentlyPlayingNewSortIndex
+        );
+
+        console.log("[infrontCurrentlyPlaying]", infrontCurrentlyPlaying);
+
+        await MpvPlayer._clearPlaylist();
+
+        const behindCurrentlyPlaying = sortedEntries.filter(
+            (e) => e.sortIndex > currentlyPlayingNewSortIndex
+        );
+
+        console.log("[behindCurrentlyPlaying]", behindCurrentlyPlaying);
+
+        for (const e of infrontCurrentlyPlaying.toReversed()) {
+            await MpvPlayer.loadFile(e.path, { InsertAt: 0 });
+        }
+
+        for (const e of behindCurrentlyPlaying) {
+            await MpvPlayer.loadFile(e.path, "Append");
+        }
+    }
+
     public static async getPlaylistPos() {
         if (!MpvPlayer.playlist) throw new Error("No playlist loaded");
         return await MpvPlayer._getPlaylistPos();
@@ -228,6 +298,7 @@ export default class MpvPlayer {
 
     public static async setPlaylistPos(pos: number) {
         if (!MpvPlayer.playlist) throw new Error("No playlist loaded");
+        console.log("[setPlaylistPos]", pos);
         await MpvPlayer._setPlaylistPos(pos);
     }
 

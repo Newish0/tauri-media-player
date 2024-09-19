@@ -452,6 +452,23 @@ pub struct PlaylistEntry {
     pub id: Option<i64>,
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum LoadMode {
+    Replace,
+    Append,
+    AppendPlay,
+    InsertNext,
+    InsertNextPlay,
+    InsertAt(usize),
+    InsertAtPlay(usize),
+}
+
+impl Default for LoadMode {
+    fn default() -> Self {
+        LoadMode::Replace
+    }
+}
+
 pub struct MpvPlayer {
     mpv: Arc<Mpv>,
 }
@@ -484,12 +501,27 @@ impl MpvPlayer {
         self.mpv.initialize()
     }
 
-    pub fn load_file(&self, path: &str) -> Result<(), MpvError> {
+    pub fn load_file(&self, path: &str, mode: Option<LoadMode>) -> Result<(), MpvError> {
         let escaped_path = Self::escape_path(path);
         println!("Loading file: {}", path);
         println!("Loading file(escaped): {}", escaped_path);
-        self.mpv
-            .command_string(&format!("loadfile \"{}\"", escaped_path))
+
+        let command = match mode.unwrap_or_default() {
+            LoadMode::Replace => format!("loadfile \"{}\"", escaped_path),
+            LoadMode::Append => format!("loadfile \"{}\" append", escaped_path),
+            LoadMode::AppendPlay => format!("loadfile \"{}\" append-play", escaped_path),
+            LoadMode::InsertNext => format!("loadfile \"{}\" insert-next", escaped_path),
+            LoadMode::InsertNextPlay => format!("loadfile \"{}\" insert-next-play", escaped_path),
+            LoadMode::InsertAt(index) => {
+                println!("Inserting at index: {}", index);
+                format!("loadfile \"{}\" insert-at {}", escaped_path, index)
+            }
+            LoadMode::InsertAtPlay(index) => {
+                format!("loadfile \"{}\" insert-at-play {}", escaped_path, index)
+            }
+        };
+
+        self.mpv.command_string(&command)
     }
 
     pub fn play(&self) -> Result<(), MpvError> {

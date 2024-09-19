@@ -133,9 +133,8 @@ const Playlist: React.FC = () => {
      * @param entry - The playlist entry to play.
      */
     const handlePlayEntry = async (entry: IPlaylistEntry) => {
-        const index = entry.index;
         await MpvPlayer.setPlaylist(playlist);
-        await MpvPlayer.setPlaylistPos(index);
+        await MpvPlayer.setPlaylistPos(entry.sortIndex);
 
         if (isVideoFileByFileExtension(entry.path)) {
             navigate("/focused-player");
@@ -180,9 +179,20 @@ const Playlist: React.FC = () => {
             const destEntry = playlist.entries[destEntryIndex];
 
             if (!srcEntry || !destEntry) return;
-            arrayMove(playlist.entries, srcEntryIndex, destEntryIndex); // optimistic update
-            await updatePlaylistEntrySortIndex(srcEntry.id, destEntry.sortIndex);
-            await updatePlaylistEntrySortIndex(destEntry.id, srcEntry.sortIndex);
+
+            // optimistic update
+            const tmp = srcEntry.sortIndex;
+            srcEntry.sortIndex = destEntry.sortIndex;
+            destEntry.sortIndex = tmp;
+            playlist.entries = arrayMove(playlist.entries, srcEntryIndex, destEntryIndex);
+            console.log(
+                "[handleDragEnd] NEW playlist.entries",
+                playlist.entries.toSorted((a, b) => a.sortIndex - b.sortIndex)
+            );
+            MpvPlayer.updatePlaylist(playlist);
+
+            await updatePlaylistEntrySortIndex(srcEntry.id, srcEntry.sortIndex);
+            await updatePlaylistEntrySortIndex(destEntry.id, destEntry.sortIndex);
             revalidator.revalidate();
         }
     };
