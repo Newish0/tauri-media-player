@@ -8,7 +8,6 @@
  * with a context menu to offer additional actions for each playlist item.
  */
 
-import React from "react";
 import {
     ContextMenu,
     ContextMenuContent,
@@ -17,13 +16,10 @@ import {
 } from "@/components/ui/context-menu";
 import { cn, formatSeconds } from "@/lib/utils";
 import { IPlaylistEntry } from "@/services/PlaylistEntrySvc";
-import { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
-import { DraggableAttributes } from "@dnd-kit/core";
 import {
-    DragHandleDots1Icon,
-    DragHandleDots2Icon,
-    DragHandleVerticalIcon,
+    DragHandleDots1Icon
 } from "@radix-ui/react-icons";
+import React from "react";
 import { SortableItemChildProps } from "./DraggableSimplePlaylist";
 
 /**
@@ -62,7 +58,7 @@ const SimplePlaylistItem: React.FC<SimplePlaylistItemProps> = React.memo(
                                 </div>
                             ) : null}
 
-                            {/* The icon will only be visible when the parent div (group) is hovered */}
+                            {/* The icon will only be visible when the parent div (group) is hovered and not readonly */}
                             <DragHandleDots1Icon
                                 className={cn(
                                     "invisible",
