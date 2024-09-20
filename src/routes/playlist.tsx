@@ -166,6 +166,7 @@ const Playlist: React.FC = () => {
      * @param entry - The playlist entry to delete.
      */
     const handleDeletePlaylistEntry = async (entry: IPlaylistEntry) => {
+        console.log("[handleDeletePlaylistEntry]", entry);
         await deletePlaylistEntryById(entry.id);
         revalidator.revalidate();
     };

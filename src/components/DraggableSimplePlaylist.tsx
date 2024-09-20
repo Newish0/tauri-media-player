@@ -7,6 +7,7 @@ import {
     useSensor,
     useSensors,
     DragEndEvent,
+    DraggableAttributes,
 } from "@dnd-kit/core";
 import {
     arrayMove,
@@ -17,6 +18,9 @@ import {
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { Button } from "./ui/button";
+import { DragHandleDots1Icon } from "@radix-ui/react-icons";
+import { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 
 type DraggableSimplePlaylistProps = {
     items: {
@@ -83,6 +87,11 @@ const DraggableSimplePlaylist: React.FC<DraggableSimplePlaylistProps> = memo(
 
 export default DraggableSimplePlaylist;
 
+export type SortableItemChildProps = {
+    listeners?: SyntheticListenerMap;
+    attributes?: DraggableAttributes;
+};
+
 export const SortableItem: React.FC<React.PropsWithChildren<{ id: string | number }>> = function (
     props
 ) {
@@ -95,9 +104,13 @@ export const SortableItem: React.FC<React.PropsWithChildren<{ id: string | numbe
         transition,
     };
 
+    const childWithProps = React.isValidElement(props.children)
+        ? React.cloneElement(props.children, { ...{ listeners, attributes } })
+        : props.children;
+
     return (
-        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-            {props.children}
+        <div ref={setNodeRef} style={style}>
+            {childWithProps}
         </div>
     );
 };

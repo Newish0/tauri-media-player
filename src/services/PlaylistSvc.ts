@@ -40,6 +40,7 @@ export async function getPlaylistById(id: number): Promise<IPlaylist | undefined
         with: {
             entries: {
                 with: { mediaInfo: true },
+                orderBy: (playlistEntry, { asc }) => asc(playlistEntry.sortIndex),
             },
         },
     });
@@ -77,5 +78,6 @@ export function getAllPlaylists(): Promise<IPlaylist[]> {
                 with: { mediaInfo: true },
             },
         },
+        orderBy: (playlist, { asc }) => asc(playlist.index),
     });
 }
