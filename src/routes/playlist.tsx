@@ -31,6 +31,7 @@ import { dirname } from "@tauri-apps/api/path";
 import DraggableSimplePlaylist from "@/components/DraggableSimplePlaylist";
 import { arrayMove } from "@dnd-kit/sortable";
 import { DragEndEvent } from "@dnd-kit/core";
+import EnhancedPlaylistTable from "@/components/EnhancedPlaylistTable";
 
 type IPlaylistEntry = IPlaylist["entries"][number];
 
@@ -224,7 +225,7 @@ const Playlist: React.FC = () => {
     return (
         <PlaylistContainerContextMenu handleAddFile={handleAddFileToPlaylist}>
             <ScrollArea className="h-full px-1">
-                <DraggableSimplePlaylist
+                {/* <DraggableSimplePlaylist
                     disabled={readonly}
                     onDragEnd={handleDragEnd}
                     items={playlist.entries
@@ -236,6 +237,7 @@ const Playlist: React.FC = () => {
                                     key={e.path}
                                     entry={e}
                                     isActive={
+                                        // TODO: Use proper logic 
                                         MpvPlayer.getPlaylist()?.id === playlist.id &&
                                         playerInfo.path === e.path
                                     }
@@ -245,7 +247,22 @@ const Playlist: React.FC = () => {
                                 />
                             ),
                         }))}
-                ></DraggableSimplePlaylist>
+                ></DraggableSimplePlaylist> */}
+
+                <EnhancedPlaylistTable
+                    entries={playlist.entries}
+                    activeEntry={playlist.entries.find(
+                        (e) => e.id === playerInfo.currentPlaylistEntry?.id
+                    )}
+                    onPlay={handlePlayEntry}
+                    onDelete={handleDeletePlaylistEntry}
+                    readonly={false}
+                    onEntrySorted={(entries) =>
+                        Promise.all(
+                            entries.map((e) => updatePlaylistEntrySortIndex(e.id, e.sortIndex))
+                        ).finally(() => revalidator.revalidate())
+                    }
+                />
 
                 {/* Bottom spacer to allow more room for the context menu */}
                 <div className="h-[20vh]"></div>

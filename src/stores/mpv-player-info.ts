@@ -1,4 +1,6 @@
 import MpvPlayer, { MpvEventId, Track } from "@/services/MpvPlayer";
+import { IPlaylistEntry } from "@/services/PlaylistEntrySvc";
+import { IPlaylist } from "@/services/PlaylistSvc";
 import { atom } from "nanostores";
 
 type PlayerInfo = {
@@ -9,6 +11,8 @@ type PlayerInfo = {
     path: string;
     filename: string;
     tracks: Track[];
+    currentPlaylist: IPlaylist | null;
+    currentPlaylistEntry: IPlaylistEntry | null;
 };
 
 export const $mpvPlayerInfo = atom<PlayerInfo>({
@@ -19,6 +23,8 @@ export const $mpvPlayerInfo = atom<PlayerInfo>({
     path: "", // empty path ==> no file loaded
     filename: "",
     tracks: [],
+    currentPlaylist: null,
+    currentPlaylistEntry: null,
 });
 
 export function setPartialMpvPlayerInfo(partialInfo: Partial<PlayerInfo>) {
@@ -28,7 +34,7 @@ export function setPartialMpvPlayerInfo(partialInfo: Partial<PlayerInfo>) {
     });
 }
 
-// Initial setup for polling data   
+// Initial setup for polling data
 (async function init() {
     const fetchInfo = async () => {
         // Get state and use default value if there is an error
@@ -39,6 +45,11 @@ export function setPartialMpvPlayerInfo(partialInfo: Partial<PlayerInfo>) {
         const path = await MpvPlayer.getPath().catch(() => "");
         const filename = await MpvPlayer.getFilename().catch(() => "");
         const tracks = await MpvPlayer.getTracks().catch(() => []);
+        const currentPlaylist = MpvPlayer.getPlaylist();
+        const currentPlaylistEntrySortIndex = await MpvPlayer.getPlaylistPos().catch(() => -1);
+        const currentPlaylistEntry =
+            currentPlaylist?.entries.find((e) => e.sortIndex === currentPlaylistEntrySortIndex) ??
+            null;
 
         setPartialMpvPlayerInfo({
             duration,
@@ -48,6 +59,8 @@ export function setPartialMpvPlayerInfo(partialInfo: Partial<PlayerInfo>) {
             path,
             filename,
             tracks,
+            currentPlaylist,
+            currentPlaylistEntry,
         });
     };
 
