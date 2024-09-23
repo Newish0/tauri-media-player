@@ -62,3 +62,13 @@ export async function getMediaInfo(path: string): Promise<MediaMetadata | undefi
 
     return mediaInfo;
 }
+
+type Picture = {
+    data: number[];
+    mimeType: string;
+};
+
+export async function getPictures(path: string): Promise<Picture[]> {
+    const pictures: any = await invoke("get_pictures", { path });
+    return pictures.map(objectKeysToCamelCase) as Picture[];
+}

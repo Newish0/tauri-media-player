@@ -24,6 +24,22 @@ async fn get_media_info(path: String) -> Result<metadata::SimplifiedMetadata, St
 }
 
 #[tauri::command]
+async fn get_pictures(path: String) -> Result<Vec<metadata::Picture>, String> {
+    match metadata::get_pictures(&path).await {
+        Ok(pictures) => Ok(pictures),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+
+#[tauri::command]
+fn set_background(window: tauri::Window, color: String) {
+  // Emit the 'set-background' event with the color value
+  window.emit("set-background", color).unwrap();
+}
+
+
+#[tauri::command]
 async fn db_execute(
     db_path: String,
     sql: String,
@@ -113,12 +129,15 @@ fn main() {
 
             // Webview for controlled background (to get thumbnail/album art acrylic backdrop)
             let bg_win =
-                tauri::WindowBuilder::new(app, "bg", tauri::WindowUrl::App("about:blank".into()))
+                tauri::WindowBuilder::new(app, "bg", tauri::WindowUrl::App("bg.html".into()))
                     .title("MPV Webview")
                     .parent_window(container_win.hwnd().unwrap())
                     .build()
                     .unwrap();
-            // TODO: bg_win: add basic JS to listen for messages for setting the background image
+        
+        
+            #[cfg(dev)]
+            bg_win.open_devtools();
 
             let app_win = tauri::WindowBuilder::new(
                 app,
@@ -212,6 +231,8 @@ fn main() {
             mpv_tauri_commands::mpv_set_playlist_from_paths,
             mpv_tauri_commands::mpv_clear_playlist,
             get_media_info,
+            get_pictures,
+            set_background,
             db_execute
         ])
         .run(tauri::generate_context!())

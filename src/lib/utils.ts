@@ -153,3 +153,35 @@ export async function getAllFilesInDirectory(dirPath: string): Promise<string[]>
     processEntries(items);
     return files;
 }
+
+/**
+ * Converts an array of numbers representing binary image data to a base64-encoded image string.
+ *
+ * @param data - The array of numbers representing the binary data of the image.
+ * @param mimeType - The MIME type of the image (e.g., "image/jpeg", "image/png").
+ * @returns A base64-encoded string that represents the image, formatted as a Data URI.
+ *
+ * @example
+ * ```ts
+ * const imageData = [255, 216, 255, 224]; // Example JPEG binary data
+ * const mimeType = "image/jpeg";
+ * const base64Image = convertToBase64Image(imageData, mimeType);
+ * console.log(base64Image);
+ * // Output: data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...
+ * ```
+ */
+export function convertToBase64Image(data: number[], mimeType: string): string {
+    // Convert number array to a Uint8Array
+    const uint8Array = new Uint8Array(data);
+
+    // Create a binary string from the Uint8Array
+    const binaryString = uint8Array.reduce((data, byte) => {
+        return data + String.fromCharCode(byte);
+    }, "");
+
+    // Convert binary string to base64
+    const base64String = btoa(binaryString);
+
+    // Return the base64 image URL
+    return `data:${mimeType};base64,${base64String}`;
+}

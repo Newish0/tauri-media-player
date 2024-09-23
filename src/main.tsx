@@ -9,6 +9,11 @@ import FocusedPlayer from "@/routes/focused-player";
 import Playlist, { loader as playlistLoader } from "@/routes/playlist";
 
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import MpvPlayer, { MpvEventId } from "./services/MpvPlayer";
+import { getPictures } from "./services/MediaInfo";
+import { convertToBase64Image } from "./lib/utils";
+import { emit } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api";
 
 const router = createBrowserRouter([
     {
@@ -35,6 +40,22 @@ const router = createBrowserRouter([
         ],
     },
 ]);
+
+MpvPlayer.on(MpvEventId.StartFile, async () => {
+    const path = await MpvPlayer.getPath();
+    console.log("start file", path);
+    if (path) {
+        const pictures = await getPictures(path);
+
+        if (pictures.length > 0) {
+            const base64Picture = convertToBase64Image(pictures[0].data, pictures[0].mimeType);
+            console.log(base64Picture);
+
+            // await emit('set-background', base64Picture);
+            invoke("set_background", { color: base64Picture });
+        }
+    }
+});
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>

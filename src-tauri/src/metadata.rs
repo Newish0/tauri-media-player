@@ -68,3 +68,31 @@ pub async fn parse_metadata(path: &str) -> Result<SimplifiedMetadata, Box<dyn st
 
     Ok(metadata)
 }
+
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Picture {
+    data: Vec<u8>,
+    mime_type: String,
+}
+
+pub async fn get_pictures(path: &str) -> Result<Vec<Picture>, Box<dyn std::error::Error>> {
+    let path = Path::new(path);
+    let tagged_file = Probe::open(path)?.guess_file_type()?.read()?;
+    let tag = tagged_file
+        .primary_tag()
+        .or_else(|| tagged_file.first_tag());
+    
+    if let Some(tag) = tag {
+        let pictures = tag.pictures().iter().map(|p| Picture {
+            data: p.data().to_vec(),
+            mime_type: p.mime_type().map_or_else(
+                || String::from("application/octet-stream"),
+                |mt| mt.to_string()
+            ),
+        }).collect();
+        Ok(pictures)
+    } else {
+        Ok(vec![])
+    }
+}

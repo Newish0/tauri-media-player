@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Background</title>
+</head>
+
+<style>
+  body {
+    position: relative;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  #bg {
+    position: absolute;
+    object-fit: cover;
+    width: 100vw;
+    height: 100vh;
+    /* filter: blur(10px); */
+    /* scale: 120%; */
+  }
+
+  #screen2 {
+    background: white;
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    opacity: 0.5;
+    mix-blend-mode: color-dodge;
+}
+
+  #screen1 {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    backdrop-filter: blur(10px);
+  }
+</style>
+
+<body>
+  <img id="bg"></img>
+  <div id="screen2"></div>
+  <div id="screen1"></div>
+</body>
+
+<script>
+  // Listen for the 'set-background' event and change the background color
+  window.__TAURI__.event.listen('set-background', (event) => {
+    console.log(event);
+    document.querySelector('#bg').src = event.payload;
+  });
+</script>
+
+</html>

@@ -503,8 +503,8 @@ impl MpvPlayer {
 
     pub fn load_file(&self, path: &str, mode: Option<LoadMode>) -> Result<(), MpvError> {
         let escaped_path = Self::escape_path(path);
-        println!("Loading file: {}", path);
-        println!("Loading file(escaped): {}", escaped_path);
+        // println!("Loading file: {}", path);
+        // println!("Loading file(escaped): {}", escaped_path);
 
         let command = match mode.unwrap_or_default() {
             LoadMode::Replace => format!("loadfile \"{}\"", escaped_path),
@@ -513,7 +513,7 @@ impl MpvPlayer {
             LoadMode::InsertNext => format!("loadfile \"{}\" insert-next", escaped_path),
             LoadMode::InsertNextPlay => format!("loadfile \"{}\" insert-next-play", escaped_path),
             LoadMode::InsertAt(index) => {
-                println!("Inserting at index: {}", index);
+                // println!("Inserting at index: {}", index);
                 format!("loadfile \"{}\" insert-at {}", escaped_path, index)
             }
             LoadMode::InsertAtPlay(index) => {
