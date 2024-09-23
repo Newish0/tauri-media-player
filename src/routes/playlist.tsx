@@ -28,7 +28,7 @@ import {
 import { type IPlaylist, getPlaylistById } from "@/services/PlaylistSvc";
 import { readDir } from "@tauri-apps/api/fs";
 import { dirname } from "@tauri-apps/api/path";
-import DraggableSimplePlaylist from "@/components/DraggableSimplePlaylist";
+import DraggableList from "@/components/DraggableList";
 import { arrayMove } from "@dnd-kit/sortable";
 import { DragEndEvent } from "@dnd-kit/core";
 import EnhancedPlaylistTable from "@/components/EnhancedPlaylistTable";
@@ -225,29 +225,30 @@ const Playlist: React.FC = () => {
     return (
         <PlaylistContainerContextMenu handleAddFile={handleAddFileToPlaylist}>
             <ScrollArea className="h-full px-1">
-                {/* <DraggableSimplePlaylist
-                    disabled={readonly}
+                {/* <DraggableList
+                    items={playlist.entries.toSorted((a, b) => a.sortIndex - b.sortIndex)}
                     onDragEnd={handleDragEnd}
-                    items={playlist.entries
-                        .toSorted((a, b) => a.sortIndex - b.sortIndex)
-                        .map((e) => ({
-                            id: e.id,
-                            element: (
-                                <SimplePlaylistItem
-                                    key={e.path}
-                                    entry={e}
-                                    isActive={
-                                        // TODO: Use proper logic 
-                                        MpvPlayer.getPlaylist()?.id === playlist.id &&
-                                        playerInfo.path === e.path
-                                    }
-                                    onPlay={handlePlayEntry}
-                                    onDelete={handleDeletePlaylistEntry}
-                                    readonly={readonly}
-                                />
-                            ),
-                        }))}
-                ></DraggableSimplePlaylist> */}
+                    disabled={readonly}
+                    getItemId={(entry) => entry.id}
+                    renderItem={(e, index, { ref, style, attributes, listeners }) => (
+                        <SimplePlaylistItem
+                            ref={ref}
+                            style={style}
+                            attributes={attributes}
+                            listeners={listeners}
+                            key={e.path}
+                            entry={e}
+                            isActive={
+                                // TODO: Use proper logic
+                                MpvPlayer.getPlaylist()?.id === playlist.id &&
+                                playerInfo.path === e.path
+                            }
+                            onPlay={handlePlayEntry}
+                            onDelete={handleDeletePlaylistEntry}
+                            readonly={readonly}
+                        />
+                    )}
+                /> */}
 
                 <EnhancedPlaylistTable
                     entries={playlist.entries}
@@ -256,12 +257,13 @@ const Playlist: React.FC = () => {
                     )}
                     onPlay={handlePlayEntry}
                     onDelete={handleDeletePlaylistEntry}
-                    readonly={false}
-                    onEntrySorted={(entries) =>
+                    readonly={readonly}
+                    onEntrySorted={(entries) => {
+                        MpvPlayer.updatePlaylist({ ...playlist, entries });
                         Promise.all(
                             entries.map((e) => updatePlaylistEntrySortIndex(e.id, e.sortIndex))
-                        ).finally(() => revalidator.revalidate())
-                    }
+                        ).finally(() => revalidator.revalidate());
+                    }}
                 />
 
                 {/* Bottom spacer to allow more room for the context menu */}

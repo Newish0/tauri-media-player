@@ -12,6 +12,9 @@ import { ArrowUpDown, GripVertical } from "lucide-react";
 import { IPlaylistEntry } from "@/services/PlaylistEntrySvc";
 import { cn, formatSeconds } from "@/lib/utils";
 import { PlaylistItemContextMenu } from "./PlaylistItemContextMenu";
+import DraggableList from "./DraggableList";
+import { DragEndEvent } from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
 
 type SortKey = keyof IPlaylistEntry["mediaInfo"] | keyof IPlaylistEntry;
 
@@ -67,14 +70,29 @@ const EnhancedPlaylistTable: React.FC<EnhancedPlaylistTableProps> = ({
 
         setSortedEntries(sorted);
         if (onEntrySorted) {
-            console.log("CALL", onEntrySorted);
             onEntrySorted(sorted);
         }
     };
 
-    const onDragEnd = () => {
-        // Stub: Implement drag and drop logic here
-        console.log("Drag ended");
+    const onDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (over && active.id !== over.id) {
+            setSortedEntries((entries) => {
+                const srcEntryIndex = entries.findIndex((e) => e.id === active.id);
+                const destEntryIndex = entries.findIndex((e) => e.id === over.id);
+                const srcEntry = entries[srcEntryIndex];
+                const destEntry = entries[destEntryIndex];
+
+                if (!srcEntry || !destEntry) return entries;
+                const tmp = srcEntry.sortIndex;
+                srcEntry.sortIndex = destEntry.sortIndex;
+                destEntry.sortIndex = tmp;
+
+                const newEntries = arrayMove(entries, srcEntryIndex, destEntryIndex);
+                if (onEntrySorted) onEntrySorted(newEntries);
+                return newEntries;
+            });
+        }
     };
 
     return (
@@ -111,50 +129,59 @@ const EnhancedPlaylistTable: React.FC<EnhancedPlaylistTableProps> = ({
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {sortedEntries.map((entry, index) => {
-                    const isActive =
-                        activeEntry?.playlistId === entry.playlistId &&
-                        activeEntry?.id === entry.id;
-
-                    return (
-                        <PlaylistItemContextMenu
-                            entry={entry}
-                            onPlay={onPlay}
-                            onDelete={onDelete}
-                            readonly={readonly}
-                            key={entry.id}
-                        >
-                            <TableRow
-                                className={cn(
-                                    "hover:bg-accent/60 hover:text-accent-foreground",
-                                    isActive
-                                        ? "bg-accent text-accent-foreground"
-                                        : "text-muted-foreground"
-                                )}
-                                onDoubleClick={() => onPlay(entry)}
+                <DraggableList
+                    items={sortedEntries.toSorted((a, b) => a.sortIndex - b.sortIndex)}
+                    onDragEnd={onDragEnd}
+                    disabled={readonly}
+                    getItemId={(entry) => entry.id}
+                    renderItem={(entry, index, { ref, style, attributes, listeners }) => {
+                        const isActive =
+                            activeEntry?.playlistId === entry.playlistId &&
+                            activeEntry?.id === entry.id;
+                        return (
+                            <PlaylistItemContextMenu
+                                entry={entry}
+                                onPlay={onPlay}
+                                onDelete={onDelete}
+                                readonly={readonly}
+                                key={entry.id}
                             >
-                                <TableCell>
-                                    <div className="flex gap-2 items-center">
-                                        {!readonly && (
-                                            <GripVertical className="h-4 w-4 cursor-move" />
-                                        )}
+                                <TableRow
+                                    ref={ref}
+                                    {...attributes}
+                                    {...listeners}
+                                    style={style}
+                                    className={cn(
+                                        "hover:bg-accent/60 hover:text-accent-foreground",
+                                        isActive
+                                            ? "bg-accent text-accent-foreground"
+                                            : "text-muted-foreground"
+                                    )}
+                                    onDoubleClick={() => onPlay(entry)}
+                                >
+                                    <TableCell>
+                                        <div className="flex gap-2 items-center">
+                                            {!readonly && (
+                                                <GripVertical className="h-4 w-4 cursor-move" />
+                                            )}
 
-                                        {entry.mediaInfo.title}
-                                    </div>
-                                </TableCell>
-                                <TableCell className="text-center">
-                                    {entry.mediaInfo.artist}
-                                </TableCell>
-                                <TableCell className="text-center">
-                                    {entry.mediaInfo.album}
-                                </TableCell>
-                                <TableCell className="text-center">
-                                    {formatSeconds(entry.mediaInfo.duration ?? 0)}
-                                </TableCell>
-                            </TableRow>
-                        </PlaylistItemContextMenu>
-                    );
-                })}
+                                            {entry.mediaInfo.title}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                        {entry.mediaInfo.artist}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                        {entry.mediaInfo.album}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                        {formatSeconds(entry.mediaInfo.duration ?? 0)}
+                                    </TableCell>
+                                </TableRow>
+                            </PlaylistItemContextMenu>
+                        );
+                    }}
+                />
             </TableBody>
         </Table>
     );
