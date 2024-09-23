@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useCallback } from "react";
 import {
     Table,
@@ -13,11 +15,18 @@ import { IPlaylistEntry } from "@/services/PlaylistEntrySvc";
 import { cn, formatSeconds } from "@/lib/utils";
 import { PlaylistItemContextMenu } from "./PlaylistItemContextMenu";
 import DraggableList from "./DraggableList";
-import { DragEndEvent, DraggableAttributes } from "@dnd-kit/core";
+import { DragEndEvent, type DraggableAttributes } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
+import { type SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
+import {
+    ContextMenu,
+    ContextMenuCheckboxItem,
+    ContextMenuContent,
+    ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 type SortKey = keyof IPlaylistEntry["mediaInfo"] | keyof IPlaylistEntry;
+type ColumnKey = "title" | "artist" | "album" | "track" | "duration";
 
 interface EnhancedPlaylistTableProps {
     entries: IPlaylistEntry[];
@@ -38,6 +47,13 @@ export default function EnhancedPlaylistTable({
 }: EnhancedPlaylistTableProps) {
     const [sortedEntries, setSortedEntries] = useState<IPlaylistEntry[]>(entries);
     const [sortDirections, setSortDirections] = useState<Record<string, "asc" | "desc">>({});
+    const [visibleColumns, setVisibleColumns] = useState<Record<ColumnKey, boolean>>({
+        title: true,
+        artist: true,
+        album: true,
+        track: true,
+        duration: true,
+    });
 
     const handleSort = useCallback(
         (key: SortKey) => {
@@ -54,7 +70,6 @@ export default function EnhancedPlaylistTable({
                                 ? b.mediaInfo[key as keyof IPlaylistEntry["mediaInfo"]]
                                 : b[key as keyof IPlaylistEntry];
 
-                        // Handle potential null values
                         if (aValue === null && bValue === null) return 0;
                         if (aValue === null) return direction === "asc" ? 1 : -1;
                         if (bValue === null) return direction === "asc" ? -1 : 1;
@@ -109,27 +124,77 @@ export default function EnhancedPlaylistTable({
         [handleSort]
     );
 
+    const toggleColumnVisibility = useCallback((column: ColumnKey) => {
+        setVisibleColumns((prev) => ({ ...prev, [column]: !prev[column] }));
+    }, []);
+
     const renderTableHeader = useCallback(
         () => (
             <TableHeader>
-                <TableRow>
-                    <TableHead>{renderSortButton("title", "Title")}</TableHead>
-                    <TableHead className="text-center">
-                        {renderSortButton("artist", "Artist")}
-                    </TableHead>
-                    <TableHead className="text-center">
-                        {renderSortButton("album", "Album")}
-                    </TableHead>
-                    <TableHead className="text-center">
-                        {renderSortButton("track", "Track")}
-                    </TableHead>
-                    <TableHead className="text-center">
-                        {renderSortButton("duration", "Duration")}
-                    </TableHead>
-                </TableRow>
+                <ContextMenu>
+                    <ContextMenuTrigger asChild>
+                        <TableRow>
+                            {visibleColumns.title && (
+                                <TableHead>{renderSortButton("title", "Title")}</TableHead>
+                            )}
+                            {visibleColumns.artist && (
+                                <TableHead className="text-center">
+                                    {renderSortButton("artist", "Artist")}
+                                </TableHead>
+                            )}
+                            {visibleColumns.album && (
+                                <TableHead className="text-center">
+                                    {renderSortButton("album", "Album")}
+                                </TableHead>
+                            )}
+                            {visibleColumns.track && (
+                                <TableHead className="text-center">
+                                    {renderSortButton("track", "Track")}
+                                </TableHead>
+                            )}
+                            {visibleColumns.duration && (
+                                <TableHead className="text-center">
+                                    {renderSortButton("duration", "Duration")}
+                                </TableHead>
+                            )}
+                        </TableRow>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent>
+                        <ContextMenuCheckboxItem
+                            checked={visibleColumns.title}
+                            onCheckedChange={() => toggleColumnVisibility("title")}
+                        >
+                            Show Title
+                        </ContextMenuCheckboxItem>
+                        <ContextMenuCheckboxItem
+                            checked={visibleColumns.artist}
+                            onCheckedChange={() => toggleColumnVisibility("artist")}
+                        >
+                            Show Artist
+                        </ContextMenuCheckboxItem>
+                        <ContextMenuCheckboxItem
+                            checked={visibleColumns.album}
+                            onCheckedChange={() => toggleColumnVisibility("album")}
+                        >
+                            Show Album
+                        </ContextMenuCheckboxItem>
+                        <ContextMenuCheckboxItem
+                            checked={visibleColumns.track}
+                            onCheckedChange={() => toggleColumnVisibility("track")}
+                        >
+                            Show Track
+                        </ContextMenuCheckboxItem>
+                        <ContextMenuCheckboxItem
+                            checked={visibleColumns.duration}
+                            onCheckedChange={() => toggleColumnVisibility("duration")}
+                        >
+                            Show Duration
+                        </ContextMenuCheckboxItem>
+                    </ContextMenuContent>
+                </ContextMenu>
             </TableHeader>
         ),
-        [renderSortButton]
+        [renderSortButton, visibleColumns, toggleColumnVisibility]
     );
 
     const renderTableRow = useCallback(
@@ -161,23 +226,33 @@ export default function EnhancedPlaylistTable({
                         )}
                         onDoubleClick={() => onPlay(entry)}
                     >
-                        <TableCell>
-                            <div className="flex gap-2 items-center">
-                                {!readonly && <GripVertical className="h-4 w-4 cursor-move" />}
-                                {entry.mediaInfo.title}
-                            </div>
-                        </TableCell>
-                        <TableCell className="text-center">{entry.mediaInfo.artist}</TableCell>
-                        <TableCell className="text-center">{entry.mediaInfo.album}</TableCell>
-                        <TableCell className="text-center">{entry.mediaInfo.track}</TableCell>
-                        <TableCell className="text-center">
-                            {formatSeconds(entry.mediaInfo.duration ?? 0)}
-                        </TableCell>
+                        {visibleColumns.title && (
+                            <TableCell>
+                                <div className="flex gap-2 items-center">
+                                    {!readonly && <GripVertical className="h-4 w-4 cursor-move" />}
+                                    {entry.mediaInfo.title}
+                                </div>
+                            </TableCell>
+                        )}
+                        {visibleColumns.artist && (
+                            <TableCell className="text-center">{entry.mediaInfo.artist}</TableCell>
+                        )}
+                        {visibleColumns.album && (
+                            <TableCell className="text-center">{entry.mediaInfo.album}</TableCell>
+                        )}
+                        {visibleColumns.track && (
+                            <TableCell className="text-center">{entry.mediaInfo.track}</TableCell>
+                        )}
+                        {visibleColumns.duration && (
+                            <TableCell className="text-center">
+                                {formatSeconds(entry.mediaInfo.duration ?? 0)}
+                            </TableCell>
+                        )}
                     </TableRow>
                 </PlaylistItemContextMenu>
             );
         },
-        [activeEntry, onPlay, onDelete, readonly]
+        [activeEntry, onPlay, onDelete, readonly, visibleColumns]
     );
 
     return (
