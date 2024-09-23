@@ -50,6 +50,9 @@ export function setPartialMpvPlayerInfo(partialInfo: Partial<PlayerInfo>) {
         const currentPlaylistEntry =
             currentPlaylist?.entries.find((e) => e.sortIndex === currentPlaylistEntrySortIndex) ??
             null;
+        
+        // console.log("currentPlaylistEntrySortIndex", currentPlaylistEntrySortIndex);
+        // console.log("currentPlaylistEntry", currentPlaylistEntry);
 
         setPartialMpvPlayerInfo({
             duration,

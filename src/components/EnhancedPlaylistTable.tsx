@@ -40,38 +40,44 @@ const EnhancedPlaylistTable: React.FC<EnhancedPlaylistTableProps> = ({
         Record<string, "asc" | "desc">
     >({});
 
+
+
+    // console.log("activeEntry", activeEntry);
+
     const onSort = (key: SortKey) => {
-        const direction = lastSortDirectionByKey[key] === "asc" ? "desc" : "asc";
+        setSortedEntries((entries) => {
+            const direction = lastSortDirectionByKey[key] === "asc" ? "desc" : "asc";
+            const sorted = entries
+                .toSorted((a, b) => {
+                    let attrA: any = null;
+                    let attrB: any = null;
+                    if (Object.keys(a.mediaInfo).includes(key)) {
+                        const k = key as any as keyof IPlaylistEntry["mediaInfo"];
+                        attrA = a.mediaInfo[k];
+                        attrB = b.mediaInfo[k];
+                    } else if (Object.keys(a).includes(key)) {
+                        const k = key as any as keyof IPlaylistEntry;
+                        attrA = a[k];
+                        attrB = b[k];
+                    }
 
-        const sorted = [...sortedEntries]
-            .sort((a, b) => {
-                let attrA: any = null;
-                let attrB: any = null;
-                if (Object.keys(a.mediaInfo).includes(key)) {
-                    const k = key as any as keyof IPlaylistEntry["mediaInfo"];
-                    attrA = a.mediaInfo[k];
-                    attrB = b.mediaInfo[k];
-                } else if (Object.keys(a).includes(key)) {
-                    const k = key as any as keyof IPlaylistEntry;
-                    attrA = a[k];
-                    attrB = b[k];
-                }
+                    if (attrA < attrB) return direction === "asc" ? -1 : 1;
+                    if (attrA > attrB) return direction === "asc" ? 1 : -1;
+                    return 0;
+                })
+                .map((e, i) => ({ ...e, sortIndex: i }));
 
-                if (attrA < attrB) return direction === "asc" ? -1 : 1;
-                if (attrA > attrB) return direction === "asc" ? 1 : -1;
-                return 0;
-            })
-            .map((e, i) => ({ ...e, sortIndex: i }));
+            setLastSortDirectionByKey({
+                ...lastSortDirectionByKey,
+                [key]: direction,
+            });
 
-        setLastSortDirectionByKey({
-            ...lastSortDirectionByKey,
-            [key]: direction,
+            if (onEntrySorted) {
+                onEntrySorted(sorted);
+            }
+
+            return sorted;
         });
-
-        setSortedEntries(sorted);
-        if (onEntrySorted) {
-            onEntrySorted(sorted);
-        }
     };
 
     const onDragEnd = (event: DragEndEvent) => {

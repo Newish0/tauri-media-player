@@ -258,11 +258,13 @@ const Playlist: React.FC = () => {
                     onPlay={handlePlayEntry}
                     onDelete={handleDeletePlaylistEntry}
                     readonly={readonly}
-                    onEntrySorted={(entries) => {
-                        MpvPlayer.updatePlaylist({ ...playlist, entries });
-                        Promise.all(
+                    onEntrySorted={async (entries) => {
+                        await Promise.all(
                             entries.map((e) => updatePlaylistEntrySortIndex(e.id, e.sortIndex))
-                        ).finally(() => revalidator.revalidate());
+                        );
+                        console.log("[onEntrySorted] updatedEntries", entries);
+                        await MpvPlayer.updatePlaylist({ ...playlist, entries });
+                        revalidator.revalidate();
                     }}
                 />
 

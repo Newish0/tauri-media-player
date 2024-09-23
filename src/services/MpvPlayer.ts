@@ -160,8 +160,8 @@ export default class MpvPlayer {
             mode?: LoadMode;
         });
 
-        console.log("LOAD FILE", filePath, mode);
-        console.log(await MpvPlayer._getPlaylist());
+        // console.log("LOAD FILE", filePath, mode);
+        // console.log(await MpvPlayer._getPlaylist());
     }
 
     public static async getPath(): Promise<string> {
@@ -242,54 +242,75 @@ export default class MpvPlayer {
         return MpvPlayer.playlist;
     }
 
-    public static async updatePlaylist(updatedPlaylist: Playlist) {
-        if (!MpvPlayer.playlist || MpvPlayer.playlist?.id !== updatedPlaylist.id) {
-            throw new Error("Cannot update playlist if it is the currently loaded playlist");
+
+
+    
+
+
+
+
+    public static async updatePlaylist(updatedPlaylist: Playlist): Promise<void> {
+        if (!MpvPlayer.playlist || MpvPlayer.playlist.id !== updatedPlaylist.id) {
+            throw new Error("Cannot update playlist: it is not the currently loaded playlist");
         }
 
-        const sortedEntries = updatedPlaylist.entries.toSorted((a, b) => a.sortIndex - b.sortIndex);
+        const sortedEntries = MpvPlayer.sortPlaylistEntries(updatedPlaylist.entries);
+        const currentlyPlayingEntry = await MpvPlayer.getCurrentlyPlayingEntry(sortedEntries);
 
-        const currentlyPlayingOldSortIndex = await MpvPlayer.getPlaylistPos();
-        const currentlyPlayingOldEntry = MpvPlayer.playlist.entries.find(
+        if (!currentlyPlayingEntry) {
+            throw new Error("Currently playing entry not found in the updated playlist");
+        }
+
+        const { infrontEntries, behindEntries } = MpvPlayer.splitPlaylistEntries(sortedEntries, currentlyPlayingEntry);
+
+        await MpvPlayer.rebuildPlaylist(infrontEntries, behindEntries);
+
+        MpvPlayer.playlist = updatedPlaylist;
+    }
+
+    private static sortPlaylistEntries(entries: Playlist['entries']): Playlist['entries'] {
+        return entries.toSorted((a, b) => a.sortIndex - b.sortIndex);
+    }
+
+    private static async getCurrentlyPlayingEntry(sortedEntries: Playlist['entries']): Promise<Playlist['entries'][0] | undefined> {
+        const currentlyPlayingOldSortIndex = await MpvPlayer._getPlaylistPos();
+        const currentlyPlayingOldEntry = MpvPlayer.playlist!.entries.find(
             (e) => e.sortIndex === currentlyPlayingOldSortIndex
         );
+        return sortedEntries.find((e) => e.id == currentlyPlayingOldEntry?.id);
+    }
 
-        const currentlyPlayingNewEntry = sortedEntries.find(
-            (e) => e.index === currentlyPlayingOldEntry?.index
+    private static splitPlaylistEntries(sortedEntries: Playlist['entries'], currentlyPlayingEntry: Playlist['entries'][0]) {
+        const infrontEntries = sortedEntries.filter(
+            (e) => e.sortIndex < currentlyPlayingEntry.sortIndex
         );
-
-        if (!currentlyPlayingNewEntry) {
-            throw new Error(
-                "An entry was deleted from the playlist while it was playing. Need to re-set playlist on deletion."
-            );
-        }
-
-        console.log("[updatePlaylist] Currently Playing:", currentlyPlayingNewEntry);
-
-        const currentlyPlayingNewSortIndex = currentlyPlayingNewEntry?.sortIndex;
-
-        const infrontCurrentlyPlaying = sortedEntries.filter(
-            (e) => e.sortIndex < currentlyPlayingNewSortIndex
+        const behindEntries = sortedEntries.filter(
+            (e) => e.sortIndex > currentlyPlayingEntry.sortIndex
         );
+        return { infrontEntries, behindEntries };
+    }
 
-        console.log("[infrontCurrentlyPlaying]", infrontCurrentlyPlaying);
-
+    private static async rebuildPlaylist(infrontEntries: Playlist['entries'], behindEntries: Playlist['entries']): Promise<void> {
         await MpvPlayer._clearPlaylist();
 
-        const behindCurrentlyPlaying = sortedEntries.filter(
-            (e) => e.sortIndex > currentlyPlayingNewSortIndex
-        );
-
-        console.log("[behindCurrentlyPlaying]", behindCurrentlyPlaying);
-
-        for (const e of infrontCurrentlyPlaying.toReversed()) {
-            await MpvPlayer.loadFile(e.path, { InsertAt: 0 });
+        for (const entry of infrontEntries.toReversed()) {
+            await MpvPlayer.loadFile(entry.path, { InsertAt: 0 });
         }
 
-        for (const e of behindCurrentlyPlaying) {
-            await MpvPlayer.loadFile(e.path, "Append");
+        for (const entry of behindEntries) {
+            await MpvPlayer.loadFile(entry.path, "Append");
         }
     }
+
+
+
+
+
+
+
+
+
+
 
     public static async getPlaylistPos() {
         if (!MpvPlayer.playlist) throw new Error("No playlist loaded");
