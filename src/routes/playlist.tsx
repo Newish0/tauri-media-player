@@ -29,6 +29,7 @@ import {
 import { type IPlaylist, getPlaylistById } from "@/services/PlaylistSvc";
 import { readDir } from "@tauri-apps/api/fs";
 import { dirname } from "@tauri-apps/api/path";
+import PlaylistViewModeToggleGroup, { ViewMode } from "@/components/PlaylistViewModeToggleGroup";
 
 type IPlaylistEntry = IPlaylist["entries"][number];
 
@@ -106,6 +107,7 @@ const Playlist: React.FC = () => {
     const revalidator = useRevalidator();
     const navigate = useNavigate();
     const navigation = useNavigation();
+    const [viewMode, setViewMode] = React.useState<ViewMode>("simple");
 
     useEffect(() => {
         if (playlist.id !== "current-folder") return;
@@ -228,26 +230,21 @@ const Playlist: React.FC = () => {
     return (
         <PlaylistContainerContextMenu handleAddFile={handleAddFileToPlaylist}>
             <ScrollArea className="h-full px-1">
-                <SimpleDndPlaylist
-                    entries={playlist.entries}
-                    activeEntry={playlist.entries.find(
-                        (e) => e.id === playerInfo.currentPlaylistEntry?.id
-                    )}
-                    onPlay={handlePlayEntry}
-                    onDelete={handleDeletePlaylistEntry}
-                    readonly={readonly}
-                    onEntriesSorted={handleUpdateEntires}
-                />
+                <div className="sticky top-0 flex justify-end bg-gradient-to-b from-muted/50">
+                    <PlaylistViewModeToggleGroup
+                        viewMode={viewMode}
+                        onViewModeChange={setViewMode}
+                    />
+                </div>
 
-                <EnhancedPlaylistTable
+                <PlaylistByMode
+                    mode={viewMode}
                     entries={playlist.entries}
-                    activeEntry={playlist.entries.find(
-                        (e) => e.id === playerInfo.currentPlaylistEntry?.id
-                    )}
+                    readonly={readonly}
                     onPlay={handlePlayEntry}
                     onDelete={handleDeletePlaylistEntry}
-                    readonly={readonly}
                     onEntriesSorted={handleUpdateEntires}
+                    currentPlaylistEntry={playerInfo.currentPlaylistEntry}
                 />
 
                 {/* Bottom spacer to allow more room for the context menu */}
@@ -255,6 +252,50 @@ const Playlist: React.FC = () => {
             </ScrollArea>
         </PlaylistContainerContextMenu>
     );
+};
+
+const PlaylistByMode: React.FC<{
+    mode: ViewMode;
+    entries: IPlaylistEntry[];
+    readonly: boolean;
+    onPlay: (entry: IPlaylistEntry) => void;
+    onDelete: (entry: IPlaylistEntry) => void;
+    onEntriesSorted?: (entries: IPlaylistEntry[]) => void;
+    currentPlaylistEntry?: IPlaylistEntry | null;
+}> = ({ mode, entries, readonly, onPlay, onDelete, onEntriesSorted, currentPlaylistEntry }) => {
+    const activeEntry = entries.find((e) => e.id === currentPlaylistEntry?.id);
+
+    if (mode === "simple") {
+        return (
+            <SimpleDndPlaylist
+                entries={entries}
+                activeEntry={activeEntry}
+                onPlay={onPlay}
+                onDelete={onDelete}
+                readonly={readonly}
+                onEntriesSorted={onEntriesSorted}
+            />
+        );
+    }
+
+    if (mode === "table") {
+        return (
+            <EnhancedPlaylistTable
+                entries={entries}
+                activeEntry={activeEntry}
+                onPlay={onPlay}
+                onDelete={onDelete}
+                readonly={readonly}
+                onEntriesSorted={onEntriesSorted}
+            />
+        );
+    }
+
+    if (import.meta.env.DEV) {
+        return <div>Unsupported view mode: {mode}</div>;
+    }
+
+    return null;
 };
 
 export default Playlist;
