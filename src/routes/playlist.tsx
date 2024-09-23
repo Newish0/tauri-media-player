@@ -177,33 +177,6 @@ const Playlist: React.FC = () => {
         revalidator.revalidate();
     };
 
-    // const handleDragEnd = async (event: DragEndEvent) => {
-    //     const { active, over } = event;
-    //     if (over && active.id !== over.id) {
-    //         const srcEntryIndex = playlist.entries.findIndex((e) => e.id === active.id);
-    //         const destEntryIndex = playlist.entries.findIndex((e) => e.id === over.id);
-    //         const srcEntry = playlist.entries[srcEntryIndex];
-    //         const destEntry = playlist.entries[destEntryIndex];
-
-    //         if (!srcEntry || !destEntry) return;
-
-    //         // optimistic update
-    //         const tmp = srcEntry.sortIndex;
-    //         srcEntry.sortIndex = destEntry.sortIndex;
-    //         destEntry.sortIndex = tmp;
-    //         playlist.entries = arrayMove(playlist.entries, srcEntryIndex, destEntryIndex);
-    //         console.log(
-    //             "[handleDragEnd] NEW playlist.entries",
-    //             playlist.entries.toSorted((a, b) => a.sortIndex - b.sortIndex)
-    //         );
-    //         MpvPlayer.updatePlaylist(playlist);
-
-    //         await updatePlaylistEntrySortIndex(srcEntry.id, srcEntry.sortIndex);
-    //         await updatePlaylistEntrySortIndex(destEntry.id, destEntry.sortIndex);
-    //         revalidator.revalidate();
-    //     }
-    // };
-
     if (navigation.state === "loading") {
         return (
             <div className="h-full space-y-1 p-1">
