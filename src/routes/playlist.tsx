@@ -11,8 +11,9 @@ import { open } from "@tauri-apps/api/dialog";
 import React, { useEffect } from "react";
 import { useLoaderData, useNavigate, useNavigation, useRevalidator } from "react-router-dom";
 
+import EnhancedPlaylistTable from "@/components/EnhancedPlaylistTable";
 import PlaylistContainerContextMenu from "@/components/PlaylistContainerContextMenu";
-import SimplePlaylistItem from "@/components/SimplePlaylistItem";
+import SimpleDndPlaylist from "@/components/SimpleDndPlaylist";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,10 +29,6 @@ import {
 import { type IPlaylist, getPlaylistById } from "@/services/PlaylistSvc";
 import { readDir } from "@tauri-apps/api/fs";
 import { dirname } from "@tauri-apps/api/path";
-import DraggableList from "@/components/DraggableList";
-import { arrayMove } from "@dnd-kit/sortable";
-import { DragEndEvent } from "@dnd-kit/core";
-import EnhancedPlaylistTable from "@/components/EnhancedPlaylistTable";
 
 type IPlaylistEntry = IPlaylist["entries"][number];
 
@@ -172,32 +169,38 @@ const Playlist: React.FC = () => {
         revalidator.revalidate();
     };
 
-    const handleDragEnd = async (event: DragEndEvent) => {
-        const { active, over } = event;
-        if (over && active.id !== over.id) {
-            const srcEntryIndex = playlist.entries.findIndex((e) => e.id === active.id);
-            const destEntryIndex = playlist.entries.findIndex((e) => e.id === over.id);
-            const srcEntry = playlist.entries[srcEntryIndex];
-            const destEntry = playlist.entries[destEntryIndex];
-
-            if (!srcEntry || !destEntry) return;
-
-            // optimistic update
-            const tmp = srcEntry.sortIndex;
-            srcEntry.sortIndex = destEntry.sortIndex;
-            destEntry.sortIndex = tmp;
-            playlist.entries = arrayMove(playlist.entries, srcEntryIndex, destEntryIndex);
-            console.log(
-                "[handleDragEnd] NEW playlist.entries",
-                playlist.entries.toSorted((a, b) => a.sortIndex - b.sortIndex)
-            );
-            MpvPlayer.updatePlaylist(playlist);
-
-            await updatePlaylistEntrySortIndex(srcEntry.id, srcEntry.sortIndex);
-            await updatePlaylistEntrySortIndex(destEntry.id, destEntry.sortIndex);
-            revalidator.revalidate();
-        }
+    const handleUpdateEntires = async (entries: IPlaylistEntry[]) => {
+        await Promise.all(entries.map((e) => updatePlaylistEntrySortIndex(e.id, e.sortIndex)));
+        await MpvPlayer.updatePlaylist({ ...playlist, entries });
+        revalidator.revalidate();
     };
+
+    // const handleDragEnd = async (event: DragEndEvent) => {
+    //     const { active, over } = event;
+    //     if (over && active.id !== over.id) {
+    //         const srcEntryIndex = playlist.entries.findIndex((e) => e.id === active.id);
+    //         const destEntryIndex = playlist.entries.findIndex((e) => e.id === over.id);
+    //         const srcEntry = playlist.entries[srcEntryIndex];
+    //         const destEntry = playlist.entries[destEntryIndex];
+
+    //         if (!srcEntry || !destEntry) return;
+
+    //         // optimistic update
+    //         const tmp = srcEntry.sortIndex;
+    //         srcEntry.sortIndex = destEntry.sortIndex;
+    //         destEntry.sortIndex = tmp;
+    //         playlist.entries = arrayMove(playlist.entries, srcEntryIndex, destEntryIndex);
+    //         console.log(
+    //             "[handleDragEnd] NEW playlist.entries",
+    //             playlist.entries.toSorted((a, b) => a.sortIndex - b.sortIndex)
+    //         );
+    //         MpvPlayer.updatePlaylist(playlist);
+
+    //         await updatePlaylistEntrySortIndex(srcEntry.id, srcEntry.sortIndex);
+    //         await updatePlaylistEntrySortIndex(destEntry.id, destEntry.sortIndex);
+    //         revalidator.revalidate();
+    //     }
+    // };
 
     if (navigation.state === "loading") {
         return (
@@ -225,30 +228,16 @@ const Playlist: React.FC = () => {
     return (
         <PlaylistContainerContextMenu handleAddFile={handleAddFileToPlaylist}>
             <ScrollArea className="h-full px-1">
-                {/* <DraggableList
-                    items={playlist.entries.toSorted((a, b) => a.sortIndex - b.sortIndex)}
-                    onDragEnd={handleDragEnd}
-                    disabled={readonly}
-                    getItemId={(entry) => entry.id}
-                    renderItem={(e, index, { ref, style, attributes, listeners }) => (
-                        <SimplePlaylistItem
-                            ref={ref}
-                            style={style}
-                            attributes={attributes}
-                            listeners={listeners}
-                            key={e.path}
-                            entry={e}
-                            isActive={
-                                // TODO: Use proper logic
-                                MpvPlayer.getPlaylist()?.id === playlist.id &&
-                                playerInfo.path === e.path
-                            }
-                            onPlay={handlePlayEntry}
-                            onDelete={handleDeletePlaylistEntry}
-                            readonly={readonly}
-                        />
+                <SimpleDndPlaylist
+                    entries={playlist.entries}
+                    activeEntry={playlist.entries.find(
+                        (e) => e.id === playerInfo.currentPlaylistEntry?.id
                     )}
-                /> */}
+                    onPlay={handlePlayEntry}
+                    onDelete={handleDeletePlaylistEntry}
+                    readonly={readonly}
+                    onEntriesSorted={handleUpdateEntires}
+                />
 
                 <EnhancedPlaylistTable
                     entries={playlist.entries}
@@ -258,14 +247,7 @@ const Playlist: React.FC = () => {
                     onPlay={handlePlayEntry}
                     onDelete={handleDeletePlaylistEntry}
                     readonly={readonly}
-                    onEntrySorted={async (entries) => {
-                        await Promise.all(
-                            entries.map((e) => updatePlaylistEntrySortIndex(e.id, e.sortIndex))
-                        );
-                        console.log("[onEntrySorted] updatedEntries", entries);
-                        await MpvPlayer.updatePlaylist({ ...playlist, entries });
-                        revalidator.revalidate();
-                    }}
+                    onEntriesSorted={handleUpdateEntires}
                 />
 
                 {/* Bottom spacer to allow more room for the context menu */}

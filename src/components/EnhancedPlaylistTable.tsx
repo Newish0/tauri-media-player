@@ -24,7 +24,7 @@ interface EnhancedPlaylistTableProps {
     onPlay: (entry: IPlaylistEntry) => void;
     onDelete: (entry: IPlaylistEntry) => void;
     readonly: boolean;
-    onEntrySorted?: (sortedEntries: IPlaylistEntry[]) => void;
+    onEntriesSorted?: (sortedEntries: IPlaylistEntry[]) => void;
 }
 
 const EnhancedPlaylistTable: React.FC<EnhancedPlaylistTableProps> = ({
@@ -33,14 +33,12 @@ const EnhancedPlaylistTable: React.FC<EnhancedPlaylistTableProps> = ({
     onPlay,
     onDelete,
     readonly,
-    onEntrySorted,
+    onEntriesSorted,
 }) => {
     const [sortedEntries, setSortedEntries] = useState<IPlaylistEntry[]>(entries);
     const [lastSortDirectionByKey, setLastSortDirectionByKey] = useState<
         Record<string, "asc" | "desc">
     >({});
-
-
 
     // console.log("activeEntry", activeEntry);
 
@@ -72,8 +70,8 @@ const EnhancedPlaylistTable: React.FC<EnhancedPlaylistTableProps> = ({
                 [key]: direction,
             });
 
-            if (onEntrySorted) {
-                onEntrySorted(sorted);
+            if (onEntriesSorted) {
+                onEntriesSorted(sorted);
             }
 
             return sorted;
@@ -95,7 +93,7 @@ const EnhancedPlaylistTable: React.FC<EnhancedPlaylistTableProps> = ({
                 destEntry.sortIndex = tmp;
 
                 const newEntries = arrayMove(entries, srcEntryIndex, destEntryIndex);
-                if (onEntrySorted) onEntrySorted(newEntries);
+                if (onEntriesSorted) onEntriesSorted(newEntries);
                 return newEntries;
             });
         }
@@ -140,7 +138,7 @@ const EnhancedPlaylistTable: React.FC<EnhancedPlaylistTableProps> = ({
                     onDragEnd={onDragEnd}
                     disabled={readonly}
                     getItemId={(entry) => entry.id}
-                    renderItem={(entry, index, { ref, style, attributes, listeners }) => {
+                    renderItem={(entry, _, { ref, style, attributes, listeners }) => {
                         const isActive =
                             activeEntry?.playlistId === entry.playlistId &&
                             activeEntry?.id === entry.id;
