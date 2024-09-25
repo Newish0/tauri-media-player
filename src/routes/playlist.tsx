@@ -8,7 +8,7 @@
  */
 
 import { open } from "@tauri-apps/api/dialog";
-import React, { useEffect } from "react";
+import React, { memo, useCallback, useEffect } from "react";
 import { useLoaderData, useNavigate, useNavigation, useRevalidator } from "react-router-dom";
 
 import EnhancedPlaylistTable from "@/components/EnhancedPlaylistTable";
@@ -103,7 +103,6 @@ export const loader = async ({ params }: { params: { id?: string } }): Promise<L
  */
 const Playlist: React.FC = () => {
     const { playlist, readonly } = useLoaderData() as LoaderData;
-    const { info: playerInfo } = useMpvPlayer();
     const revalidator = useRevalidator();
     const navigate = useNavigate();
     const navigation = useNavigation();
@@ -132,19 +131,22 @@ const Playlist: React.FC = () => {
      * Handles playing an entry from the playlist.
      * @param entry - The playlist entry to play.
      */
-    const handlePlayEntry = async (entry: IPlaylistEntry) => {
-        await MpvPlayer.setPlaylist(playlist);
-        await MpvPlayer.setPlaylistPos(entry.sortIndex);
+    const handlePlayEntry = useCallback(
+        async (entry: IPlaylistEntry) => {
+            await MpvPlayer.setPlaylist(playlist);
+            await MpvPlayer.setPlaylistPos(entry.sortIndex);
 
-        if (isVideoFileByFileExtension(entry.path)) {
-            navigate("/focused-player");
-        }
-    };
+            if (isVideoFileByFileExtension(entry.path)) {
+                navigate("/focused-player");
+            }
+        },
+        [playlist, navigate]
+    );
 
     /**
      * Handles adding files to the playlist.
      */
-    const handleAddFileToPlaylist = async () => {
+    const handleAddFileToPlaylist = useCallback(async () => {
         const paths = await open({ multiple: true });
         if (!paths) return;
 
@@ -159,23 +161,29 @@ const Playlist: React.FC = () => {
             }
             revalidator.revalidate();
         }
-    };
+    }, [playlist, revalidator]);
 
     /**
      * Handles deleting an entry from the playlist.
      * @param entry - The playlist entry to delete.
      */
-    const handleDeletePlaylistEntry = async (entry: IPlaylistEntry) => {
-        console.log("[handleDeletePlaylistEntry]", entry);
-        await deletePlaylistEntryById(entry.id);
-        revalidator.revalidate();
-    };
+    const handleDeletePlaylistEntry = useCallback(
+        async (entry: IPlaylistEntry) => {
+            console.log("[handleDeletePlaylistEntry]", entry);
+            await deletePlaylistEntryById(entry.id);
+            revalidator.revalidate();
+        },
+        [revalidator]
+    );
 
-    const handleUpdateEntires = async (entries: IPlaylistEntry[]) => {
-        await Promise.all(entries.map((e) => updatePlaylistEntrySortIndex(e.id, e.sortIndex)));
-        await MpvPlayer.updatePlaylist({ ...playlist, entries });
-        revalidator.revalidate();
-    };
+    const handleUpdateEntires = useCallback(
+        async (entries: IPlaylistEntry[]) => {
+            await Promise.all(entries.map((e) => updatePlaylistEntrySortIndex(e.id, e.sortIndex)));
+            await MpvPlayer.updatePlaylist({ ...playlist, entries });
+            revalidator.revalidate();
+        },
+        [revalidator, playlist]
+    );
 
     if (navigation.state === "loading") {
         return (
@@ -217,7 +225,7 @@ const Playlist: React.FC = () => {
                     onPlay={handlePlayEntry}
                     onDelete={handleDeletePlaylistEntry}
                     onEntriesSorted={handleUpdateEntires}
-                    currentPlaylistEntry={playerInfo.currentPlaylistEntry}
+                    // currentPlaylistEntry={playerInfo.currentPlaylistEntry}
                 />
 
                 {/* Bottom spacer to allow more room for the context menu */}
@@ -235,40 +243,42 @@ const PlaylistByMode: React.FC<{
     onDelete: (entry: IPlaylistEntry) => void;
     onEntriesSorted?: (entries: IPlaylistEntry[]) => void;
     currentPlaylistEntry?: IPlaylistEntry | null;
-}> = ({ mode, entries, readonly, onPlay, onDelete, onEntriesSorted, currentPlaylistEntry }) => {
-    const activeEntry = entries.find((e) => e.id === currentPlaylistEntry?.id);
+}> = memo(
+    ({ mode, entries, readonly, onPlay, onDelete, onEntriesSorted, currentPlaylistEntry }) => {
+        const activeEntry = entries.find((e) => e.id === currentPlaylistEntry?.id);
 
-    if (mode === "simple") {
-        return (
-            <SimpleDndPlaylist
-                entries={entries}
-                activeEntry={activeEntry}
-                onPlay={onPlay}
-                onDelete={onDelete}
-                readonly={readonly}
-                onEntriesSorted={onEntriesSorted}
-            />
-        );
+        if (mode === "simple") {
+            return (
+                <SimpleDndPlaylist
+                    entries={entries}
+                    activeEntry={activeEntry}
+                    onPlay={onPlay}
+                    onDelete={onDelete}
+                    readonly={readonly}
+                    onEntriesSorted={onEntriesSorted}
+                />
+            );
+        }
+
+        if (mode === "table") {
+            return (
+                <EnhancedPlaylistTable
+                    entries={entries}
+                    activeEntry={activeEntry}
+                    onPlay={onPlay}
+                    onDelete={onDelete}
+                    readonly={readonly}
+                    onEntriesSorted={onEntriesSorted}
+                />
+            );
+        }
+
+        if (import.meta.env.DEV) {
+            return <div>Unsupported view mode: {mode}</div>;
+        }
+
+        return null;
     }
-
-    if (mode === "table") {
-        return (
-            <EnhancedPlaylistTable
-                entries={entries}
-                activeEntry={activeEntry}
-                onPlay={onPlay}
-                onDelete={onDelete}
-                readonly={readonly}
-                onEntriesSorted={onEntriesSorted}
-            />
-        );
-    }
-
-    if (import.meta.env.DEV) {
-        return <div>Unsupported view mode: {mode}</div>;
-    }
-
-    return null;
-};
+);
 
 export default Playlist;

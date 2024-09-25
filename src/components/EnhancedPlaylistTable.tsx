@@ -200,7 +200,7 @@ export default function EnhancedPlaylistTable({
     const renderTableRow = useCallback(
         (
             entry: IPlaylistEntry,
-            ref: React.Ref<HTMLTableRowElement>,
+            ref?: React.Ref<HTMLTableRowElement>,
             style?: React.CSSProperties,
             attributes?: DraggableAttributes,
             listeners?: SyntheticListenerMap
@@ -229,7 +229,10 @@ export default function EnhancedPlaylistTable({
                         {visibleColumns.title && (
                             <TableCell>
                                 <div className="flex gap-2 items-center">
-                                    {!readonly && <GripVertical className="h-4 w-4 cursor-move" />}
+                                    {/* Grip won't show up if we did not pass in the DND props (i.e. listeners & attributes) */}
+                                    {attributes && listeners && !readonly && (
+                                        <GripVertical className="h-4 w-4 cursor-move" />
+                                    )}
                                     {entry.mediaInfo.title}
                                 </div>
                             </TableCell>
@@ -255,12 +258,21 @@ export default function EnhancedPlaylistTable({
         [activeEntry, onPlay, onDelete, readonly, visibleColumns]
     );
 
+    if (sortedEntries.length > 200) {
+        return (
+            <Table>
+                {renderTableHeader()}
+                <TableBody>{sortedEntries.map((entry) => renderTableRow(entry))}</TableBody>
+            </Table>
+        );
+    }
+
     return (
         <Table>
             {renderTableHeader()}
             <TableBody>
                 <DraggableList
-                    items={sortedEntries.sort((a, b) => a.sortIndex - b.sortIndex)}
+                    items={sortedEntries}
                     onDragEnd={handleDragEnd}
                     disabled={readonly}
                     getItemId={(entry) => entry.id}

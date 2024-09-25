@@ -46,6 +46,28 @@ const SimpleDndPlaylist: React.FC<SimplePlaylistItemProps> = ({
         }
     };
 
+    if (sortedEntries.length > 200) {
+        return (
+            <div>
+                {sortedEntries.map((e) => {
+                    const isActive =
+                        activeEntry?.playlistId === e.playlistId && activeEntry?.id === e.id;
+
+                    return (
+                        <SimplePlaylistItem
+                            key={e.path}
+                            entry={e}
+                            isActive={isActive}
+                            onPlay={onPlay}
+                            onDelete={onDelete}
+                            readonly={readonly}
+                        />
+                    );
+                })}
+            </div>
+        );
+    }
+
     return (
         <DraggableList
             items={sortedEntries}

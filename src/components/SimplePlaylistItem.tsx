@@ -66,16 +66,19 @@ const SimplePlaylistItem = React.forwardRef<HTMLDivElement, SimplePlaylistItemPr
                         ) : null}
 
                         {/* The icon will only be visible when the parent div (group) is hovered and not readonly */}
-                        <DragHandleDots1Icon
-                            className={cn(
-                                "invisible",
-                                readonly
-                                    ? ""
-                                    : "group-hover:visible mr-[-10px] text-muted-foreground scale-y-150"
-                            )}
-                            {...listeners}
-                            {...attributes}
-                        />
+                        {/* It also won't show up if we did not pass in the DND props (i.e. listeners & attributes) */}
+                        {attributes && listeners && (
+                            <DragHandleDots1Icon
+                                className={cn(
+                                    "invisible",
+                                    readonly
+                                        ? ""
+                                        : "group-hover:visible mr-[-10px] text-muted-foreground scale-y-150"
+                                )}
+                                {...listeners}
+                                {...attributes}
+                            />
+                        )}
                     </div>
                 </div>
             </PlaylistItemContextMenu>
