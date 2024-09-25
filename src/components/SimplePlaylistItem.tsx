@@ -8,19 +8,13 @@
  * with a context menu to offer additional actions for each playlist item.
  */
 
-import {
-    ContextMenu,
-    ContextMenuContent,
-    ContextMenuItem,
-    ContextMenuTrigger,
-} from "@/components/ui/context-menu";
 import { cn, formatSeconds } from "@/lib/utils";
 import { IPlaylistEntry } from "@/services/PlaylistEntrySvc";
+import { DraggableAttributes } from "@dnd-kit/core";
+import { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 import { DragHandleDots1Icon } from "@radix-ui/react-icons";
 import React from "react";
 import { PlaylistItemContextMenu } from "./PlaylistItemContextMenu";
-import { DraggableAttributes } from "@dnd-kit/core";
-import { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 
 /**
  * Props for the PlaylistItem component.

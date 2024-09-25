@@ -13,11 +13,11 @@ import { useLoaderData, useNavigate, useNavigation, useRevalidator } from "react
 
 import EnhancedPlaylistTable from "@/components/EnhancedPlaylistTable";
 import PlaylistContainerContextMenu from "@/components/PlaylistContainerContextMenu";
+import PlaylistViewModeToggleGroup, { ViewMode } from "@/components/PlaylistViewModeToggleGroup";
 import SimpleDndPlaylist from "@/components/SimpleDndPlaylist";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMpvPlayer } from "@/hooks/use-mpv-player";
 import { isMediaFileByFileExtension, isVideoFileByFileExtension } from "@/lib/utils";
 import { getMediaInfo } from "@/services/MediaInfo";
 import MpvPlayer, { MpvEventId } from "@/services/MpvPlayer";
@@ -29,7 +29,6 @@ import {
 import { type IPlaylist, getPlaylistById } from "@/services/PlaylistSvc";
 import { readDir } from "@tauri-apps/api/fs";
 import { dirname } from "@tauri-apps/api/path";
-import PlaylistViewModeToggleGroup, { ViewMode } from "@/components/PlaylistViewModeToggleGroup";
 
 type IPlaylistEntry = IPlaylist["entries"][number];
 
