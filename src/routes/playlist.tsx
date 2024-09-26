@@ -221,7 +221,7 @@ const Playlist: React.FC = () => {
     return (
         <PlaylistContainerContextMenu handleAddFile={handleAddFileToPlaylist}>
             <ScrollArea className="h-full px-1">
-                <div className="sticky top-0 flex justify-end bg-gradient-to-b from-muted/50">
+                <div className="sticky top-0 z-10 flex justify-end bg-gradient-to-b from-muted/50">
                     <PlaylistViewModeToggleGroup
                         viewMode={viewStates.viewMode}
                         onViewModeChange={setViewMode}
