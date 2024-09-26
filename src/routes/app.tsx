@@ -2,6 +2,7 @@ import PlayerControl from "@/components/PlayerControl";
 import PlaylistList from "@/components/PlaylistList";
 import TrackSideDetails from "@/components/TrackSideDetails";
 import { getAllPlaylists, type IPlaylist } from "@/services/PlaylistSvc";
+import { $viewStates } from "@/stores/view-states";
 import { useEffect } from "react";
 import { Outlet, useLoaderData, useLocation, useNavigate } from "react-router-dom";
 
@@ -22,12 +23,9 @@ const App: React.FC = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // TODO: navigate to last visited playlist (after implementing persistent user stuff for volume etc...)
-
-        // The current folder playlist is the default one.
         // Should never be able to stay on `/app` (only allowed on children routes)
         if (location.pathname === "/app") {
-            navigate("/app/playlists/current-folder", { replace: true });
+            navigate(`/app/playlists/${$viewStates.get().lastViewedPlaylistId}`, { replace: true });
         }
     }, [location.pathname, navigate]);
 

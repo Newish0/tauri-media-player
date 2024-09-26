@@ -29,6 +29,8 @@ import {
 import { type IPlaylist, getPlaylistById } from "@/services/PlaylistSvc";
 import { readDir } from "@tauri-apps/api/fs";
 import { dirname } from "@tauri-apps/api/path";
+import { $viewStates } from "@/stores/view-states";
+import { useStore } from "@nanostores/react";
 
 type IPlaylistEntry = IPlaylist["entries"][number];
 
@@ -105,9 +107,11 @@ const Playlist: React.FC = () => {
     const revalidator = useRevalidator();
     const navigate = useNavigate();
     const navigation = useNavigation();
-    const [viewMode, setViewMode] = React.useState<ViewMode>("simple");
+    const viewStates = useStore($viewStates);
 
     useEffect(() => {
+        $viewStates.set({ ...$viewStates.get(), lastViewedPlaylistId: playlist.id + "" });
+
         if (playlist.id !== "current-folder") return;
 
         const handlePotentialRevalidate = async () => {
@@ -184,6 +188,13 @@ const Playlist: React.FC = () => {
         [revalidator, playlist]
     );
 
+    const setViewMode = useCallback(
+        (viewMode: ViewMode) => {
+            $viewStates.set({ ...$viewStates.get(), viewMode });
+        },
+        [revalidator]
+    );
+
     if (navigation.state === "loading") {
         return (
             <div className="h-full space-y-1 p-1">
@@ -212,13 +223,13 @@ const Playlist: React.FC = () => {
             <ScrollArea className="h-full px-1">
                 <div className="sticky top-0 flex justify-end bg-gradient-to-b from-muted/50">
                     <PlaylistViewModeToggleGroup
-                        viewMode={viewMode}
+                        viewMode={viewStates.viewMode}
                         onViewModeChange={setViewMode}
                     />
                 </div>
 
                 <PlaylistByMode
-                    mode={viewMode}
+                    mode={viewStates.viewMode}
                     entries={playlist.entries}
                     readonly={readonly}
                     onPlay={handlePlayEntry}

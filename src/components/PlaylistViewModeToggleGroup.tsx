@@ -1,5 +1,5 @@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { TableIcon, ListIcon } from "lucide-react";
+import { ListIcon, TableIcon } from "lucide-react";
 
 export type ViewMode = "simple" | "table";
 
