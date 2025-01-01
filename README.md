@@ -53,7 +53,7 @@ Currently available for Windows only.
 
 ## 📦 Installation
 
-1. Download the latest release from the [Releases page](https://github.com/yourusername/tauri-media-player/releases)
+1. Download the latest release from the [Releases page](https://github.com/newish0/tauri-media-player/releases)
 2. Run the installer
 3. Follow the installation wizard
 
@@ -70,7 +70,7 @@ If you want to contribute or build from source:
 
 2. Clone and setup:
     ```bash
-    git clone https://github.com/yourusername/tauri-media-player.git
+    git clone https://github.com/newish0/tauri-media-player.git
     cd tauri-media-player
     pnpm install
     ```
