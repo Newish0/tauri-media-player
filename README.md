@@ -75,13 +75,12 @@ If you want to contribute or build from source:
     pnpm install
     ```
 
-````
 3. Ensure the dynamic library files are in `src-tauri\lib\` (i.e. `src-tauri\lib\mpv\libmpv-2.dll` exists)
 
 4. Start development server:
- ```bash
- pnpm run tauri dev
-````
+    ```bash
+     pnpm run tauri dev
+    ```
 
 5. Build for production:
     ```bash
