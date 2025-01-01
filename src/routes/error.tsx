@@ -3,9 +3,16 @@ import { Link, useRouteError } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 
 import { buttonVariants } from "@/components/ui/button";
+import { $viewStates } from "@/stores/view-states";
 
 export default function ErrorPage() {
     const error: any = useRouteError();
+
+    // Resets view state on error. Usually error happens when we forcefully delete the DB. 
+    // Therefore, need to reset stored states since certain items no longer exist in DB. 
+    const resetViewState = () => {
+        $viewStates.setKey("lastViewedPlaylistId", "current-folder");
+    };
 
     return (
         <div className="text-center space-y-2 my-16">
@@ -30,7 +37,7 @@ export default function ErrorPage() {
                 )}
             </div>
 
-            <Link to="/" className={buttonVariants({ variant: "link" })}>
+            <Link to="/" onClick={resetViewState} className={buttonVariants({ variant: "link" })}>
                 Return to app
             </Link>
         </div>

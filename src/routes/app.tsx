@@ -13,6 +13,8 @@ type LoaderData = {
 export const loader = async (): Promise<LoaderData> => {
     console.log("[AppLoader] Loading app...");
     const playlists = await getAllPlaylists();
+
+    console.log("[AppLoader] Got playlists", playlists);
     return { playlists };
 };
 
